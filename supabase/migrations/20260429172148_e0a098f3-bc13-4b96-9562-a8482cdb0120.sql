@@ -22,7 +22,7 @@ begin
     new.id,
     final_username,
     coalesce(new.raw_user_meta_data->>'display_name', final_username),
-    'did:lovable:' || encode(extensions.gen_random_bytes(16), 'hex'),
+    'did:hivelink:' || encode(extensions.gen_random_bytes(16), 'hex'),
     encode(extensions.gen_random_bytes(32), 'hex')
   );
   return new;
