@@ -21,6 +21,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { user, loading: authLoading } = useAuth();
+  const { onInboundPost } = useP2P();
   const [posts, setPosts] = useState<PostWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +43,17 @@ function Home() {
       setLoading(false);
     })();
   }, [user]);
+
+  useEffect(() => {
+    return onInboundPost((post, fromPeer) => {
+      const p = post as PostWithMeta;
+      setPosts((prev) => {
+        if (prev.some((x) => x.id === p.id)) return prev;
+        toast.info(`New post relayed peer-to-peer from ${fromPeer.slice(0, 8)}…`);
+        return [p, ...prev];
+      });
+    });
+  }, [onInboundPost]);
 
   if (authLoading) return null;
   if (!user) return <Navigate to="/auth" />;
