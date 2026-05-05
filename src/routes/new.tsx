@@ -70,17 +70,21 @@ function NewPost() {
         ipfs_hash = "Qm" + btoa(path).replace(/[^a-zA-Z0-9]/g, "").slice(0, 44);
       }
     }
-    const { error } = await supabase.from("posts").insert({
+    const { data: inserted, error } = await supabase.from("posts").insert({
       user_id: user.id,
       caption: caption.trim() || null,
       media_url,
       media_type,
       ipfs_hash,
       server_id: serverId === "none" ? null : serverId,
-    });
+    }).select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)").single();
     setSubmitting(false);
     if (error) toast.error(error.message);
-    else { toast.success("Posted!"); navigate({ to: "/" }); }
+    else {
+      if (inserted) broadcastNewPost(inserted as Record<string, unknown>);
+      toast.success("Posted!");
+      navigate({ to: "/" });
+    }
   };
 
   return (

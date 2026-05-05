@@ -2,10 +2,12 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useP2P } from "@/lib/p2p-context";
 import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cacheFeed, getCachedFeed } from "@/lib/cache";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Home,
