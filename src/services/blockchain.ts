@@ -33,20 +33,20 @@ export async function connectWallet(): Promise<WalletState> {
   }
 
   try {
-    const accounts = await window.ethereum.request({
+    const accounts = (await window.ethereum.request({
       method: "eth_requestAccounts",
-    });
+    })) as string[];
 
-    const address = accounts[0] as string;
-    
-    const chainId = await window.ethereum.request({
+    const address = accounts[0];
+
+    const chainId = (await window.ethereum.request({
       method: "eth_chainId",
-    });
+    })) as string;
 
-    const balance = await window.ethereum.request({
+    const balance = (await window.ethereum.request({
       method: "eth_getBalance",
       params: [address, "latest"],
-    });
+    })) as string;
 
     return {
       isConnected: true,
