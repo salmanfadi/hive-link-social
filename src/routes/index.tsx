@@ -2,10 +2,12 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useP2P } from "@/lib/p2p-context";
 import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cacheFeed, getCachedFeed } from "@/lib/cache";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { user, loading: authLoading } = useAuth();
+  const { onInboundPost } = useP2P();
   const [posts, setPosts] = useState<PostWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,6 +44,17 @@ function Home() {
     })();
   }, [user]);
 
+  useEffect(() => {
+    return onInboundPost((post, fromPeer) => {
+      const p = post as PostWithMeta;
+      setPosts((prev) => {
+        if (prev.some((x) => x.id === p.id)) return prev;
+        toast.info(`New post relayed peer-to-peer from ${fromPeer.slice(0, 8)}…`);
+        return [p, ...prev];
+      });
+    });
+  }, [onInboundPost]);
+
   if (authLoading) return null;
   if (!user) return <Navigate to="/auth" />;
 
@@ -48,7 +62,7 @@ function Home() {
     <Layout>
       <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 py-4">
         <h1 className="text-xl font-bold">Home Feed</h1>
-        <p className="text-xs text-muted-foreground">Federated content from across communities</p>
+        <p className="text-xs text-muted-foreground">Federated content · IPFS-pinned media · live P2P relay</p>
       </header>
       {loading ? (
         <div className="p-4 space-y-4">
