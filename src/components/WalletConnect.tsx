@@ -5,10 +5,6 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-declare global {
-  interface Window { ethereum?: { request: (args: { method: string }) => Promise<string[]> } }
-}
-
 export function WalletConnect() {
   const { user, profile, refreshProfile } = useAuth();
   const [busy, setBusy] = useState(false);
