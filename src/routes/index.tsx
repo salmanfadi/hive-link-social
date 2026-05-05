@@ -62,7 +62,7 @@ function Home() {
     <Layout>
       <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 py-4">
         <h1 className="text-xl font-bold">Home Feed</h1>
-        <p className="text-xs text-muted-foreground">Federated content from across communities</p>
+        <p className="text-xs text-muted-foreground">Federated content · IPFS-pinned media · live P2P relay</p>
       </header>
       {loading ? (
         <div className="p-4 space-y-4">
