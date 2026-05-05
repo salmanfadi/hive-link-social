@@ -149,19 +149,19 @@ export async function signMessage(message: string): Promise<string> {
     throw new Error("No wallet installed");
   }
 
-  const accounts = await window.ethereum.request({
+  const accounts = (await window.ethereum.request({
     method: "eth_accounts",
-  });
+  })) as string[];
 
   if (accounts.length === 0) {
     throw new Error("No wallet connected");
   }
 
   try {
-    const signature = await window.ethereum.request({
+    const signature = (await window.ethereum.request({
       method: "personal_sign",
       params: [message, accounts[0]],
-    });
+    })) as string;
 
     return signature;
   } catch (error) {
@@ -174,16 +174,14 @@ export async function signMessage(message: string): Promise<string> {
  * Verify a signature
  */
 export async function verifySignature(
-  message: string,
-  signature: string,
+  _message: string,
+  _signature: string,
   address: string
 ): Promise<boolean> {
-  // In production, use ecrecover or a library like ethers.js
-  // This is a simplified version
   try {
-    const accounts = await window.ethereum?.request({
+    const accounts = (await window.ethereum?.request({
       method: "eth_accounts",
-    });
+    })) as string[] | undefined;
     return accounts?.[0]?.toLowerCase() === address.toLowerCase();
   } catch {
     return false;
