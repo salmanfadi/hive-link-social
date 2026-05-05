@@ -1,12 +1,15 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, User, Users, LogOut, PlusSquare, Sparkles } from "lucide-react";
+import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useP2P } from "@/lib/p2p-context";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import type { ReactNode } from "react";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
+  const { peerCount } = useP2P();
   const navigate = useNavigate();
   const { location } = useRouterState();
 
@@ -41,6 +44,11 @@ export function Layout({ children }: { children: ReactNode }) {
             {navItem("/servers", <Users className="h-5 w-5" />, "Communities")}
             {navItem("/profile", <User className="h-5 w-5" />, "Profile")}
           </nav>
+          <div className="mb-3 px-2 hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
+            <Radio className={`h-3.5 w-3.5 ${peerCount > 0 ? "text-primary animate-pulse" : ""}`} />
+            <span>P2P</span>
+            <Badge variant="secondary" className="ml-auto">{peerCount} {peerCount === 1 ? "peer" : "peers"}</Badge>
+          </div>
           <Button
             className="w-full mb-4 rounded-xl shadow-md"
             style={{ backgroundImage: "var(--gradient-primary)" }}
