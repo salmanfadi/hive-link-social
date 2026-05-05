@@ -5,10 +5,6 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-declare global {
-  interface Window { ethereum?: { request: (args: { method: string }) => Promise<string[]> } }
-}
-
 export function WalletConnect() {
   const { user, profile, refreshProfile } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -21,7 +17,7 @@ export function WalletConnect() {
     }
     setBusy(true);
     try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
       const address = accounts[0];
       if (!address) throw new Error("No account selected");
       const { error } = await supabase.from("profiles").update({ wallet_address: address }).eq("id", user.id);

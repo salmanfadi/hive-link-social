@@ -33,20 +33,20 @@ export async function connectWallet(): Promise<WalletState> {
   }
 
   try {
-    const accounts = await window.ethereum.request({
+    const accounts = (await window.ethereum.request({
       method: "eth_requestAccounts",
-    });
+    })) as string[];
 
-    const address = accounts[0] as string;
-    
-    const chainId = await window.ethereum.request({
+    const address = accounts[0];
+
+    const chainId = (await window.ethereum.request({
       method: "eth_chainId",
-    });
+    })) as string;
 
-    const balance = await window.ethereum.request({
+    const balance = (await window.ethereum.request({
       method: "eth_getBalance",
       params: [address, "latest"],
-    });
+    })) as string;
 
     return {
       isConnected: true,
@@ -72,24 +72,24 @@ export async function getWalletState(): Promise<WalletState | null> {
   }
 
   try {
-    const accounts = await window.ethereum.request({
+    const accounts = (await window.ethereum.request({
       method: "eth_accounts",
-    });
+    })) as string[];
 
     if (accounts.length === 0) {
       return null;
     }
 
-    const address = accounts[0] as string;
-    
-    const chainId = await window.ethereum.request({
-      method: "eth_chainId",
-    });
+    const address = accounts[0];
 
-    const balance = await window.ethereum.request({
+    const chainId = (await window.ethereum.request({
+      method: "eth_chainId",
+    })) as string;
+
+    const balance = (await window.ethereum.request({
       method: "eth_getBalance",
       params: [address, "latest"],
-    });
+    })) as string;
 
     return {
       isConnected: true,
@@ -149,19 +149,19 @@ export async function signMessage(message: string): Promise<string> {
     throw new Error("No wallet installed");
   }
 
-  const accounts = await window.ethereum.request({
+  const accounts = (await window.ethereum.request({
     method: "eth_accounts",
-  });
+  })) as string[];
 
   if (accounts.length === 0) {
     throw new Error("No wallet connected");
   }
 
   try {
-    const signature = await window.ethereum.request({
+    const signature = (await window.ethereum.request({
       method: "personal_sign",
       params: [message, accounts[0]],
-    });
+    })) as string;
 
     return signature;
   } catch (error) {
@@ -174,16 +174,14 @@ export async function signMessage(message: string): Promise<string> {
  * Verify a signature
  */
 export async function verifySignature(
-  message: string,
-  signature: string,
+  _message: string,
+  _signature: string,
   address: string
 ): Promise<boolean> {
-  // In production, use ecrecover or a library like ethers.js
-  // This is a simplified version
   try {
-    const accounts = await window.ethereum?.request({
+    const accounts = (await window.ethereum?.request({
       method: "eth_accounts",
-    });
+    })) as string[] | undefined;
     return accounts?.[0]?.toLowerCase() === address.toLowerCase();
   } catch {
     return false;
@@ -195,9 +193,9 @@ declare global {
   interface Window {
     ethereum?: {
       isMetaMask?: boolean;
-      request(args: { method: string; params?: any[] }): Promise<any>;
-      on(event: string, callback: (...args: any[]) => void): void;
-      removeListener(event: string, callback: (...args: any[]) => void): void;
+      request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+      on?(event: string, callback: (...args: unknown[]) => void): void;
+      removeListener?(event: string, callback: (...args: unknown[]) => void): void;
     };
   }
 }
