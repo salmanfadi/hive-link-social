@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
+import { pinFileToIPFS } from "@/server/pinata.functions";
 
 export const Route = createFileRoute("/new")({
   component: NewPost,
@@ -55,8 +56,17 @@ function NewPost() {
       const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
       media_url = pub.publicUrl;
       media_type = file.type;
-      // mock IPFS-like content hash from path
-      ipfs_hash = "Qm" + btoa(path).replace(/[^a-zA-Z0-9]/g, "").slice(0, 44);
+      // Also pin to IPFS via Pinata for true content addressing
+      try {
+        const fd = new FormData();
+        fd.append("file", file, file.name);
+        const result = await pinFileToIPFS({ data: fd });
+        ipfs_hash = result.ipfsHash;
+        toast.success(`Pinned to IPFS: ${result.ipfsHash.slice(0, 12)}…`);
+      } catch (e: any) {
+        console.warn("IPFS pin failed, using mock hash:", e);
+        ipfs_hash = "Qm" + btoa(path).replace(/[^a-zA-Z0-9]/g, "").slice(0, 44);
+      }
     }
     const { error } = await supabase.from("posts").insert({
       user_id: user.id,
