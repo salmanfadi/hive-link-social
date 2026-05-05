@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
 import { pinFileToIPFS } from "@/server/pinata.functions";
+import { useP2P } from "@/lib/p2p-context";
 
 export const Route = createFileRoute("/new")({
   component: NewPost,
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/new")({
 
 function NewPost() {
   const { user, profile } = useAuth();
+  const { broadcastNewPost } = useP2P();
   const navigate = useNavigate();
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
