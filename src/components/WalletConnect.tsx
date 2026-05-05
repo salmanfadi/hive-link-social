@@ -17,7 +17,7 @@ export function WalletConnect() {
     }
     setBusy(true);
     try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
       const address = accounts[0];
       if (!address) throw new Error("No account selected");
       const { error } = await supabase.from("profiles").update({ wallet_address: address }).eq("id", user.id);
