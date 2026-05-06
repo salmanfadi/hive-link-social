@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServersRouteImport } from './routes/servers'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewRouteImport } from './routes/new'
@@ -27,6 +28,11 @@ const ServersRoute = ServersRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/notifications'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/servers'
     | '/s/$slug'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/notifications'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/servers'
     | '/s/$slug'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/notifications'
     | '/profile'
+    | '/reset-password'
     | '/search'
     | '/servers'
     | '/s/$slug'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   NewRoute: typeof NewRoute
   NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   ServersRoute: typeof ServersRoute
   SSlugRoute: typeof SSlugRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewRoute: NewRoute,
   NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   ServersRoute: ServersRoute,
   SSlugRoute: SSlugRoute,
@@ -229,3 +250,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
