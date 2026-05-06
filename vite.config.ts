@@ -1,16 +1,3 @@
-// HiveLink Vite Configuration
-// Standard Vite + TanStack Start configuration
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import tsConfigPaths from "vite-tsconfig-paths";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-export default defineConfig({
-  plugins: [
-    tanstackRouter(),
-    react(),
-    tailwindcss(),
-    tsConfigPaths(),
-  ],
-});
+export default defineConfig({});
