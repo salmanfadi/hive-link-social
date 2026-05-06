@@ -48,6 +48,17 @@ function AuthPage() {
     setLoading(false);
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "salman@decentra.app",
+      password: "Salman@2026",
+    });
+    if (error) toast.error(error.message);
+    else navigate({ to: "/" });
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundImage: "var(--gradient-subtle)" }}>
       <Card className="w-full max-w-md p-8 shadow-xl">
@@ -82,6 +93,9 @@ function AuthPage() {
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
         </form>
+        <Button type="button" variant="outline" onClick={handleDemoLogin} disabled={loading} className="w-full mt-3">
+          Quick sign in as Salman (demo)
+        </Button>
         <p className="text-sm text-center mt-4 text-muted-foreground">
           {mode === "login" ? "New here? " : "Already have an account? "}
           <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="text-primary font-medium hover:underline">
