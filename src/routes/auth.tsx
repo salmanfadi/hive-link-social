@@ -82,6 +82,22 @@ function AuthPage() {
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
         </form>
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={async () => {
+              if (!email) { toast.error("Enter your email first"); return; }
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+              });
+              if (error) toast.error(error.message);
+              else toast.success("Password reset email sent");
+            }}
+            className="w-full text-xs text-muted-foreground hover:text-primary mt-3"
+          >
+            Forgot password?
+          </button>
+        )}
         <p className="text-sm text-center mt-4 text-muted-foreground">
           {mode === "login" ? "New here? " : "Already have an account? "}
           <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="text-primary font-medium hover:underline">
