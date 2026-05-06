@@ -93,6 +93,9 @@ function AuthPage() {
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
         </form>
+        <Button type="button" variant="outline" onClick={handleDemoLogin} disabled={loading} className="w-full mt-3">
+          Quick sign in as Salman (demo)
+        </Button>
         <p className="text-sm text-center mt-4 text-muted-foreground">
           {mode === "login" ? "New here? " : "Already have an account? "}
           <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="text-primary font-medium hover:underline">
