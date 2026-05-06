@@ -53,6 +53,24 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -85,6 +103,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          actor_id: string
+          comment_id: string | null
+          created_at: string
+          id: string
+          post_id: string | null
+          read: boolean
+          type: Database["public"]["Enums"]["notif_type"]
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read?: boolean
+          type: Database["public"]["Enums"]["notif_type"]
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          read?: boolean
+          type?: Database["public"]["Enums"]["notif_type"]
+          user_id?: string
+        }
+        Relationships: []
       }
       posts: {
         Row: {
@@ -288,7 +339,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      notif_type: "like" | "comment" | "follow"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -415,6 +466,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      notif_type: ["like", "comment", "follow"],
+    },
   },
 } as const
