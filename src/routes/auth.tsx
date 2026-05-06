@@ -48,6 +48,17 @@ function AuthPage() {
     setLoading(false);
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "salman@decentra.app",
+      password: "Salman@2026",
+    });
+    if (error) toast.error(error.message);
+    else navigate({ to: "/" });
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundImage: "var(--gradient-subtle)" }}>
       <Card className="w-full max-w-md p-8 shadow-xl">
