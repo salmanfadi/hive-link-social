@@ -1,19 +1,36 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio } from "lucide-react";
+import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useP2P } from "@/lib/p2p-context";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import type { ReactNode } from "react";
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const { peerCount } = useP2P();
   const navigate = useNavigate();
   const { location } = useRouterState();
+  const [unread, setUnread] = useState(0);
 
-  const navItem = (to: string, icon: ReactNode, label: string) => {
+  useEffect(() => {
+    if (!user) return;
+    const refresh = async () => {
+      const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("read", false);
+      setUnread(count ?? 0);
+    };
+    refresh();
+    const ch = supabase
+      .channel(`notif-badge-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, refresh)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+
+  const navItem = (to: string, icon: ReactNode, label: string, badge?: number) => {
     const active = location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
     return (
       <Link
@@ -22,7 +39,14 @@ export function Layout({ children }: { children: ReactNode }) {
           active ? "bg-primary text-primary-foreground" : "hover:bg-secondary text-foreground"
         }`}
       >
-        {icon}
+        <span className="relative">
+          {icon}
+          {badge ? (
+            <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+              {badge > 99 ? "99+" : badge}
+            </span>
+          ) : null}
+        </span>
         <span className="font-medium hidden lg:inline">{label}</span>
       </Link>
     );
@@ -41,6 +65,8 @@ export function Layout({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex flex-col gap-1 flex-1">
             {navItem("/", <Home className="h-5 w-5" />, "Home")}
+            {navItem("/search", <Search className="h-5 w-5" />, "Search")}
+            {navItem("/notifications", <Bell className="h-5 w-5" />, "Notifications", unread)}
             {navItem("/servers", <Users className="h-5 w-5" />, "Communities")}
             {navItem("/profile", <User className="h-5 w-5" />, "Profile")}
           </nav>
@@ -85,8 +111,12 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Mobile bottom nav */}
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t border-border flex justify-around p-2 z-50">
           <Link to="/" className="p-3"><Home className="h-6 w-6" /></Link>
-          <Link to="/servers" className="p-3"><Users className="h-6 w-6" /></Link>
+          <Link to="/search" className="p-3"><Search className="h-6 w-6" /></Link>
           <Link to="/new" className="p-3"><PlusSquare className="h-6 w-6 text-primary" /></Link>
+          <Link to="/notifications" className="p-3 relative">
+            <Bell className="h-6 w-6" />
+            {unread > 0 && <span className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">{unread > 99 ? "99+" : unread}</span>}
+          </Link>
           <Link to="/profile" className="p-3"><User className="h-6 w-6" /></Link>
         </nav>
       </div>
