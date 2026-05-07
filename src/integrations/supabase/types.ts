@@ -145,6 +145,7 @@ export type Database = {
           ipfs_hash: string | null
           media_type: string | null
           media_url: string | null
+          quoted_post_id: string | null
           server_id: string | null
           signature: string | null
           user_id: string
@@ -156,6 +157,7 @@ export type Database = {
           ipfs_hash?: string | null
           media_type?: string | null
           media_url?: string | null
+          quoted_post_id?: string | null
           server_id?: string | null
           signature?: string | null
           user_id: string
@@ -167,6 +169,7 @@ export type Database = {
           ipfs_hash?: string | null
           media_type?: string | null
           media_url?: string | null
+          quoted_post_id?: string | null
           server_id?: string | null
           signature?: string | null
           user_id?: string
@@ -280,6 +283,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      server_bans: {
+        Row: {
+          banned_by: string
+          created_at: string
+          reason: string | null
+          server_id: string
+          user_id: string
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          reason?: string | null
+          server_id: string
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          reason?: string | null
+          server_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       server_members: {
         Row: {

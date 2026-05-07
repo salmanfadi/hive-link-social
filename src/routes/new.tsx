@@ -13,6 +13,9 @@ import { pinFileToIPFS } from "@/server/pinata.functions";
 import { useP2P } from "@/lib/p2p-context";
 
 export const Route = createFileRoute("/new")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    quote: typeof search.quote === "string" ? (search.quote as string) : undefined,
+  }),
   component: NewPost,
   head: () => ({ meta: [{ title: "New post — Decentra" }] }),
 });
@@ -21,12 +24,23 @@ function NewPost() {
   const { user, profile, sign } = useAuth();
   const { broadcastNewPost } = useP2P();
   const navigate = useNavigate();
+  const { quote } = Route.useSearch();
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [serverId, setServerId] = useState<string>("none");
   const [servers, setServers] = useState<Array<{ id: string; name: string }>>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [quotedPreview, setQuotedPreview] = useState<{ caption: string | null; username: string } | null>(null);
+
+  useEffect(() => {
+    if (!quote) return;
+    (async () => {
+      const { data } = await supabase.from("posts")
+        .select("caption, profiles!inner(username)").eq("id", quote).maybeSingle();
+      if (data) setQuotedPreview({ caption: (data as any).caption, username: (data as any).profiles.username });
+    })();
+  }, [quote]);
 
   useEffect(() => {
     if (!user) return;
@@ -83,6 +97,7 @@ function NewPost() {
       server_id: serverId === "none" ? null : serverId,
       created_at: createdAt,
       signature,
+      quoted_post_id: quote ?? null,
     }).select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)").single();
     setSubmitting(false);
     if (error) toast.error(error.message);
@@ -96,9 +111,15 @@ function NewPost() {
   return (
     <Layout>
       <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 py-4">
-        <h1 className="text-xl font-bold">Create post</h1>
+        <h1 className="text-xl font-bold">{quote ? "Quote post" : "Create post"}</h1>
       </header>
       <div className="p-5 space-y-4 max-w-2xl">
+        {quotedPreview && (
+          <div className="rounded-xl border border-border p-3 bg-muted/30">
+            <p className="text-xs text-muted-foreground mb-1">Quoting @{quotedPreview.username}</p>
+            {quotedPreview.caption && <p className="text-sm line-clamp-3">{quotedPreview.caption}</p>}
+          </div>
+        )}
         <Textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}

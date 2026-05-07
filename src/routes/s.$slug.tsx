@@ -6,7 +6,10 @@ import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Users, ArrowBigUp, ArrowBigDown, Shield } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Users, ArrowBigUp, ArrowBigDown, Shield, Settings, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/s/$slug")({
@@ -94,6 +97,7 @@ function ServerPage() {
             </h1>
             <p className="text-xs text-muted-foreground">/{server.slug} · {memberCount} member{memberCount === 1 ? "" : "s"}</p>
           </div>
+          {isAdmin && <ModerationDialog server={server} onChange={load} />}
           <Button variant={isMember ? "outline" : "default"} onClick={toggleMembership}>
             {isMember ? "Leave" : "Join"}
           </Button>
@@ -132,5 +136,89 @@ function ServerPage() {
         ))}
       </div>
     </Layout>
+  );
+}
+
+function ModerationDialog({ server, onChange }: { server: Server; onChange: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(server.name);
+  const [description, setDescription] = useState(server.description ?? "");
+  const [rules, setRules] = useState(server.rules ?? "");
+  const [members, setMembers] = useState<Array<{ user_id: string; username: string; display_name: string | null }>>([]);
+  const [bans, setBans] = useState<Set<string>>(new Set());
+
+  const loadMembers = async () => {
+    const { data } = await supabase
+      .from("server_members")
+      .select("user_id, profiles!inner(username, display_name)")
+      .eq("server_id", server.id);
+    setMembers(((data as any) ?? []).map((r: any) => ({
+      user_id: r.user_id, username: r.profiles.username, display_name: r.profiles.display_name,
+    })));
+    const { data: b } = await supabase.from("server_bans").select("user_id").eq("server_id", server.id);
+    setBans(new Set(((b as any) ?? []).map((x: any) => x.user_id)));
+  };
+
+  useEffect(() => { if (open) loadMembers(); }, [open, server.id]);
+
+  const save = async () => {
+    const { error } = await supabase.from("servers")
+      .update({ name, description: description || null, rules: rules || null })
+      .eq("id", server.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Community updated"); onChange(); setOpen(false); }
+  };
+
+  const toggleBan = async (userId: string) => {
+    if (bans.has(userId)) {
+      const { error } = await supabase.from("server_bans").delete().eq("server_id", server.id).eq("user_id", userId);
+      if (error) return toast.error(error.message);
+      toast.success("Unbanned");
+    } else {
+      const { error } = await supabase.from("server_bans").insert({ server_id: server.id, user_id: userId, banned_by: server.admin_id });
+      if (error) return toast.error(error.message);
+      // Also remove from members
+      await supabase.from("server_members").delete().eq("server_id", server.id).eq("user_id", userId);
+      toast.success("Banned");
+    }
+    loadMembers();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="icon" title="Moderate"><Settings className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Moderate /{server.slug}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
+          <Textarea value={rules} onChange={(e) => setRules(e.target.value)} placeholder="Community rules" className="min-h-[120px]" />
+        </div>
+        <div className="mt-4">
+          <h4 className="font-semibold text-sm mb-2">Members ({members.length})</h4>
+          <div className="space-y-1 max-h-60 overflow-y-auto">
+            {members.filter(m => m.user_id !== server.admin_id).map((m) => (
+              <div key={m.user_id} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary">
+                <span className="text-sm">@{m.username}</span>
+                <Button size="sm" variant={bans.has(m.user_id) ? "outline" : "destructive"} onClick={() => toggleBan(m.user_id)}>
+                  <Ban className="h-3 w-3 mr-1" /> {bans.has(m.user_id) ? "Unban" : "Ban"}
+                </Button>
+              </div>
+            ))}
+            {bans.size > 0 && Array.from(bans).filter(uid => !members.some(m => m.user_id === uid)).map((uid) => (
+              <div key={uid} className="flex items-center justify-between p-2 rounded-lg bg-destructive/10">
+                <span className="text-sm text-muted-foreground">Banned: {uid.slice(0, 8)}…</span>
+                <Button size="sm" variant="outline" onClick={() => toggleBan(uid)}>Unban</Button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={save}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

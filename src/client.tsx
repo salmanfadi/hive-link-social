@@ -9,3 +9,10 @@ const rootElement = document.getElementById("root");
 if (rootElement) {
   createRoot(rootElement).render(<RouterProvider router={router} />);
 }
+
+// Register service worker for PWA / offline mode
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

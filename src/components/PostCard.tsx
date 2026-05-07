@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 
 export type PostWithMeta = {
@@ -20,6 +20,7 @@ export type PostWithMeta = {
   ipfs_hash: string | null;
   created_at: string;
   signature: string | null;
+  quoted_post_id?: string | null;
   profiles: { username: string; display_name: string | null; avatar_url: string | null; public_key: string } | null;
   servers: { name: string; slug: string } | null;
 };
@@ -35,8 +36,20 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
+  const [quoted, setQuoted] = useState<PostWithMeta | null>(null);
+  const navigate = useNavigate();
   const author = post.profiles;
   const isOwner = user?.id === post.user_id;
+
+  useEffect(() => {
+    if (!post.quoted_post_id) { setQuoted(null); return; }
+    (async () => {
+      const { data } = await supabase.from("posts")
+        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
+        .eq("id", post.quoted_post_id!).maybeSingle();
+      setQuoted((data as any) ?? null);
+    })();
+  }, [post.quoted_post_id]);
 
   useEffect(() => {
     if (!post.signature || !author?.public_key) {
@@ -199,6 +212,22 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               Media unavailable (cached fallback would load here in P2P mode)
             </div>
           )}
+          {quoted && (
+            <Link
+              to="/u/$username"
+              params={{ username: quoted.profiles?.username ?? "" }}
+              className="block mt-3 p-3 rounded-xl border border-border hover:bg-secondary/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <span className="font-semibold text-foreground">{quoted.profiles?.display_name ?? quoted.profiles?.username}</span>
+                <span>@{quoted.profiles?.username}</span>
+              </div>
+              {quoted.caption && <p className="text-sm whitespace-pre-wrap line-clamp-4">{quoted.caption}</p>}
+              {quoted.media_url && (
+                <img src={quoted.media_url} alt="" className="mt-2 max-h-40 rounded-lg object-cover" />
+              )}
+            </Link>
+          )}
 
           <div className="flex items-center gap-2 mt-3 text-muted-foreground">
             <Button variant="ghost" size="sm" onClick={toggleLike} className={liked ? "text-rose-500 hover:text-rose-600" : ""}>
@@ -212,6 +241,9 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             <Button variant="ghost" size="sm" onClick={toggleRepost} className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}>
               <Repeat2 className="h-4 w-4" />
               <span className="ml-1.5 text-xs">{repostCount || ""}</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/new", search: { quote: post.id } as any })} title="Quote post">
+              <MessageCircle className="h-4 w-4 rotate-180" />
             </Button>
             <Button variant="ghost" size="sm" onClick={sharePost}>
               <Share2 className="h-4 w-4" />
