@@ -212,6 +212,22 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               Media unavailable (cached fallback would load here in P2P mode)
             </div>
           )}
+          {quoted && (
+            <Link
+              to="/u/$username"
+              params={{ username: quoted.profiles?.username ?? "" }}
+              className="block mt-3 p-3 rounded-xl border border-border hover:bg-secondary/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                <span className="font-semibold text-foreground">{quoted.profiles?.display_name ?? quoted.profiles?.username}</span>
+                <span>@{quoted.profiles?.username}</span>
+              </div>
+              {quoted.caption && <p className="text-sm whitespace-pre-wrap line-clamp-4">{quoted.caption}</p>}
+              {quoted.media_url && (
+                <img src={quoted.media_url} alt="" className="mt-2 max-h-40 rounded-lg object-cover" />
+              )}
+            </Link>
+          )}
 
           <div className="flex items-center gap-2 mt-3 text-muted-foreground">
             <Button variant="ghost" size="sm" onClick={toggleLike} className={liked ? "text-rose-500 hover:text-rose-600" : ""}>
@@ -225,6 +241,9 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             <Button variant="ghost" size="sm" onClick={toggleRepost} className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}>
               <Repeat2 className="h-4 w-4" />
               <span className="ml-1.5 text-xs">{repostCount || ""}</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/new", search: { quote: post.id } as any })} title="Quote post">
+              <MessageCircle className="h-4 w-4 rotate-180" />
             </Button>
             <Button variant="ghost" size="sm" onClick={sharePost}>
               <Share2 className="h-4 w-4" />
