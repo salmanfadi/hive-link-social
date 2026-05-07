@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert } from "lucide-react";
 import { importPublicKey, verifyData } from "@/services/crypto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,6 +33,8 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
+  const author = post.profiles;
+  const isOwner = user?.id === post.user_id;
 
   useEffect(() => {
     if (!post.signature || !author?.public_key) {

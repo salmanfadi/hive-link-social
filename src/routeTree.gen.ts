@@ -15,9 +15,11 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
+import { Route as TagsTagRouteImport } from './routes/tags.$tag'
 import { Route as SSlugRouteImport } from './routes/s.$slug'
 
 const ServersRoute = ServersRouteImport.update({
@@ -50,6 +52,11 @@ const NewRoute = NewRouteImport.update({
   path: '/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -65,6 +72,11 @@ const UUsernameRoute = UUsernameRouteImport.update({
   path: '/u/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TagsTagRoute = TagsTagRouteImport.update({
+  id: '/tags/$tag',
+  path: '/tags/$tag',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SSlugRoute = SSlugRouteImport.update({
   id: '/s/$slug',
   path: '/s/$slug',
@@ -74,6 +86,7 @@ const SSlugRoute = SSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
@@ -81,11 +94,13 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
+  '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
@@ -93,12 +108,14 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
+  '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
@@ -106,6 +123,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
   '/s/$slug': typeof SSlugRoute
+  '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
 }
 export interface FileRouteTypes {
@@ -113,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/messages'
     | '/new'
     | '/notifications'
     | '/profile'
@@ -120,11 +139,13 @@ export interface FileRouteTypes {
     | '/search'
     | '/servers'
     | '/s/$slug'
+    | '/tags/$tag'
     | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/messages'
     | '/new'
     | '/notifications'
     | '/profile'
@@ -132,11 +153,13 @@ export interface FileRouteTypes {
     | '/search'
     | '/servers'
     | '/s/$slug'
+    | '/tags/$tag'
     | '/u/$username'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/messages'
     | '/new'
     | '/notifications'
     | '/profile'
@@ -144,12 +167,14 @@ export interface FileRouteTypes {
     | '/search'
     | '/servers'
     | '/s/$slug'
+    | '/tags/$tag'
     | '/u/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  MessagesRoute: typeof MessagesRoute
   NewRoute: typeof NewRoute
   NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
@@ -157,6 +182,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   ServersRoute: typeof ServersRoute
   SSlugRoute: typeof SSlugRoute
+  TagsTagRoute: typeof TagsTagRoute
   UUsernameRoute: typeof UUsernameRoute
 }
 
@@ -204,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -225,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tags/$tag': {
+      id: '/tags/$tag'
+      path: '/tags/$tag'
+      fullPath: '/tags/$tag'
+      preLoaderRoute: typeof TagsTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$slug': {
       id: '/s/$slug'
       path: '/s/$slug'
@@ -238,6 +278,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  MessagesRoute: MessagesRoute,
   NewRoute: NewRoute,
   NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
@@ -245,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   ServersRoute: ServersRoute,
   SSlugRoute: SSlugRoute,
+  TagsTagRoute: TagsTagRoute,
   UUsernameRoute: UUsernameRoute,
 }
 export const routeTree = rootRouteImport
