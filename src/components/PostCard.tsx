@@ -20,6 +20,7 @@ export type PostWithMeta = {
   ipfs_hash: string | null;
   created_at: string;
   signature: string | null;
+  quoted_post_id?: string | null;
   profiles: { username: string; display_name: string | null; avatar_url: string | null; public_key: string } | null;
   servers: { name: string; slug: string } | null;
 };
