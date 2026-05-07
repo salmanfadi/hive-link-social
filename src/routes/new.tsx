@@ -111,9 +111,15 @@ function NewPost() {
   return (
     <Layout>
       <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 py-4">
-        <h1 className="text-xl font-bold">Create post</h1>
+        <h1 className="text-xl font-bold">{quote ? "Quote post" : "Create post"}</h1>
       </header>
       <div className="p-5 space-y-4 max-w-2xl">
+        {quotedPreview && (
+          <div className="rounded-xl border border-border p-3 bg-muted/30">
+            <p className="text-xs text-muted-foreground mb-1">Quoting @{quotedPreview.username}</p>
+            {quotedPreview.caption && <p className="text-sm line-clamp-3">{quotedPreview.caption}</p>}
+          </div>
+        )}
         <Textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
