@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -11,6 +11,12 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw redirect({ to: "/auth" });
+    }
+  },
   component: Home,
   head: () => ({
     meta: [
@@ -40,10 +46,7 @@ function Home() {
           .from("follows")
           .select("following_id")
           .eq("follower_id", user.id);
-        
-        const followingIds = (follows?.map(f => f.following_id) || []);
-        // Also include user's own posts in following feed usually, or not? 
-        // Let's stick to following for now.
+        const followingIds = follows?.map((f) => f.following_id) ?? [];
         query = query.in("user_id", followingIds);
       }
 
@@ -53,8 +56,7 @@ function Home() {
 
       if (error || !data) {
         if (feedType === "global") {
-          const cached = getCachedFeed<PostWithMeta>();
-          setPosts(cached);
+          setPosts(getCachedFeed<PostWithMeta>());
         } else {
           setPosts([]);
         }
@@ -71,13 +73,16 @@ function Home() {
       const p = post as PostWithMeta;
       setPosts((prev) => {
         if (prev.some((x) => x.id === p.id)) return prev;
-        toast.info(`New post relayed peer-to-peer from ${fromPeer.slice(0, 8)}…`);
+        toast.info(`New post relayed from ${fromPeer.slice(0, 8)}…`);
         return [p, ...prev];
       });
     });
   }, [onInboundPost]);
 
+  // While auth is resolving (only happens when a stored session exists), show nothing
   if (authLoading) return null;
+
+  // Not logged in → go to login immediately
   if (!user) return <Navigate to="/auth" />;
 
   return (
@@ -86,19 +91,21 @@ function Home() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-xl font-bold">Home Feed</h1>
-            <p className="text-xs text-muted-foreground">Federated content · IPFS-pinned media · live P2P relay</p>
+            <p className="text-xs text-muted-foreground">
+              Federated content · IPFS-pinned media · live P2P relay
+            </p>
           </div>
         </div>
         <Tabs value={feedType} onValueChange={(v) => setFeedType(v as any)} className="w-full">
           <TabsList className="w-full justify-start h-auto p-0 bg-transparent gap-6">
-            <TabsTrigger 
-              value="global" 
+            <TabsTrigger
+              value="global"
               className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
             >
               Global
             </TabsTrigger>
-            <TabsTrigger 
-              value="following" 
+            <TabsTrigger
+              value="following"
               className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
             >
               Following
@@ -108,14 +115,22 @@ function Home() {
       </header>
       {loading ? (
         <div className="p-4 space-y-4">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-xl" />
+          ))}
         </div>
       ) : posts.length === 0 ? (
         <div className="p-12 text-center text-muted-foreground">
           <p>No posts yet. Be the first to post something!</p>
         </div>
       ) : (
-        posts.map((p) => <PostCard key={p.id} post={p} onDelete={() => setPosts((ps) => ps.filter((x) => x.id !== p.id))} />)
+        posts.map((p) => (
+          <PostCard
+            key={p.id}
+            post={p}
+            onDelete={() => setPosts((ps) => ps.filter((x) => x.id !== p.id))}
+          />
+        ))
       )}
     </Layout>
   );

@@ -35,6 +35,7 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
+  const [ipfsFailed, setIpfsFailed] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
   const [quoted, setQuoted] = useState<PostWithMeta | null>(null);
   const navigate = useNavigate();
@@ -198,6 +199,7 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             )}
           </div>
           {post.caption && <p className="mt-1 whitespace-pre-wrap break-words">{renderCaption(post.caption)}</p>}
+          {/* Media fallback chain: Supabase CDN → IPFS gateway → error state */}
           {post.media_url && !imgFailed && (
             <div className="mt-3 rounded-xl overflow-hidden border border-border">
               {post.media_type?.startsWith("video") ? (
@@ -207,9 +209,22 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               )}
             </div>
           )}
-          {imgFailed && (
+          {imgFailed && post.ipfs_hash && !post.ipfs_hash.startsWith("local_") && !ipfsFailed && (
+            <div className="mt-3 rounded-xl overflow-hidden border border-border relative">
+              <img
+                src={`https://gateway.pinata.cloud/ipfs/${post.ipfs_hash}`}
+                alt=""
+                className="w-full max-h-[500px] object-cover"
+                onError={() => setIpfsFailed(true)}
+              />
+              <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">
+                via IPFS
+              </span>
+            </div>
+          )}
+          {((!post.media_url && !post.ipfs_hash) || (imgFailed && (!post.ipfs_hash || post.ipfs_hash.startsWith("local_") || ipfsFailed))) && post.media_url && (
             <div className="mt-3 p-3 rounded-xl bg-muted text-muted-foreground text-sm">
-              Media unavailable (cached fallback would load here in P2P mode)
+              Media unavailable
             </div>
           )}
           {quoted && (

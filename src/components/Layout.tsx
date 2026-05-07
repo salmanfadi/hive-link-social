@@ -2,14 +2,27 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search, MessageCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useP2P } from "@/lib/p2p-context";
+import { P2PProvider, useP2P } from "@/lib/p2p-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+/**
+ * Layout wraps all authenticated pages.
+ * P2PProvider is mounted here (not in root) so WebRTC only initialises
+ * after the user is logged in and inside the main app.
+ */
 export function Layout({ children }: { children: ReactNode }) {
+  return (
+    <P2PProvider>
+      <LayoutInner>{children}</LayoutInner>
+    </P2PProvider>
+  );
+}
+
+function LayoutInner({ children }: { children: ReactNode }) {
   const { profile, signOut, user } = useAuth();
   const { peerCount } = useP2P();
   const navigate = useNavigate();
@@ -81,7 +94,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <Button
             className="w-full mb-4 rounded-xl shadow-md"
             style={{ backgroundImage: "var(--gradient-primary)" }}
-            onClick={() => navigate({ to: "/new" })}
+            onClick={() => navigate({ to: "/new", search: {} as any })}
           >
             <PlusSquare className="h-5 w-5" />
             <span className="hidden lg:inline ml-2">New Post</span>
@@ -116,7 +129,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <Link to="/" className="p-3"><Home className="h-6 w-6" /></Link>
           <Link to="/search" className="p-3"><Search className="h-6 w-6" /></Link>
           <Link to="/messages" className="p-3"><MessageCircle className="h-6 w-6" /></Link>
-          <Link to="/new" className="p-3"><PlusSquare className="h-6 w-6 text-primary" /></Link>
+          <Link to="/new" search={{} as any} className="p-3"><PlusSquare className="h-6 w-6 text-primary" /></Link>
           <Link to="/notifications" className="p-3 relative">
             <Bell className="h-6 w-6" />
             {unread > 0 && <span className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">{unread > 99 ? "99+" : unread}</span>}

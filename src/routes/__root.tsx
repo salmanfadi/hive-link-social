@@ -1,9 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
-import { P2PProvider } from "@/lib/p2p-context";
 import { Toaster } from "@/components/ui/sonner";
-
-import appCss from "../styles.css?url";
+import * as React from "react";
 
 function NotFoundComponent() {
   return (
@@ -27,53 +25,42 @@ function NotFoundComponent() {
   );
 }
 
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "HiveLink" },
-      { name: "description", content: "Decentralized social media platform" },
-      { name: "author", content: "HiveLink" },
-      { property: "og:title", content: "HiveLink" },
-      { property: "og:description", content: "Decentralized social media platform" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@hivelink" },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-});
-
+// RootShell: SSR HTML shell. <Scripts /> injects the client JS bundle (virtual:tanstack-start-client-entry).
+// client.tsx imports styles.css which Vite injects as <style> tags on the client.
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <HeadContent />
       </head>
       <body>
-        {children}
+        <div id="root">{children}</div>
         <Scripts />
       </body>
     </html>
   );
 }
 
+export const Route = createRootRoute({
+  shellComponent: RootShell,
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+});
+
+/**
+ * Root only handles auth and toasts.
+ * P2PProvider lives inside Layout (authenticated routes only) so WebRTC
+ * never initializes on the auth/signup page or during the auth check.
+ */
 function RootComponent() {
   return (
     <AuthProvider>
-      <P2PProvider>
-        <Outlet />
-        <Toaster />
-      </P2PProvider>
+      <Outlet />
+      <Toaster />
     </AuthProvider>
   );
 }
