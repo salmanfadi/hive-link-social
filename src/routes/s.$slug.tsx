@@ -97,6 +97,7 @@ function ServerPage() {
             </h1>
             <p className="text-xs text-muted-foreground">/{server.slug} · {memberCount} member{memberCount === 1 ? "" : "s"}</p>
           </div>
+          {isAdmin && <ModerationDialog server={server} onChange={load} />}
           <Button variant={isMember ? "outline" : "default"} onClick={toggleMembership}>
             {isMember ? "Leave" : "Join"}
           </Button>
