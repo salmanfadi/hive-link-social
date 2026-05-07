@@ -78,10 +78,10 @@ function bufToHex(buf: ArrayBuffer): string {
     .join("");
 }
 
-function hexToBuf(hex: string): Uint8Array {
+function hexToBuf(hex: string): ArrayBuffer {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
   }
-  return bytes;
+  return bytes.buffer as ArrayBuffer;
 }

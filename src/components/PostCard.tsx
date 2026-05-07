@@ -1,4 +1,5 @@
-import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert, Repeat2 } from "lucide-react";
 import { importPublicKey, verifyData } from "@/services/crypto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,15 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const { user } = useAuth();
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
+  const [reposted, setReposted] = useState(false);
   const [comments, setComments] = useState<Array<{ id: string; content: string; created_at: string; profiles: { username: string; avatar_url: string | null } | null }>>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
+  const author = post.profiles;
+  const isOwner = user?.id === post.user_id;
 
   useEffect(() => {
     if (!post.signature || !author?.public_key) {
@@ -55,12 +60,27 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
     (async () => {
       const { count } = await supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id);
       setLikeCount(count ?? 0);
+      const { count: rc } = await supabase.from("reposts").select("*", { count: "exact", head: true }).eq("post_id", post.id);
+      setRepostCount(rc ?? 0);
       if (user) {
         const { data } = await supabase.from("likes").select("post_id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle();
         setLiked(!!data);
+        const { data: r } = await supabase.from("reposts").select("post_id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle();
+        setReposted(!!r);
       }
     })();
   }, [post.id, user]);
+
+  const toggleRepost = async () => {
+    if (!user) return;
+    if (reposted) {
+      await supabase.from("reposts").delete().eq("post_id", post.id).eq("user_id", user.id);
+      setRepostCount((c) => c - 1); setReposted(false);
+    } else {
+      await supabase.from("reposts").insert({ post_id: post.id, user_id: user.id });
+      setRepostCount((c) => c + 1); setReposted(true);
+    }
+  };
 
   const toggleLike = async () => {
     if (!user) return;
@@ -105,9 +125,6 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
     const url = window.location.origin + "/?post=" + post.id;
     try { await navigator.clipboard.writeText(url); toast.success("Link copied"); } catch { toast.info(url); }
   };
-
-  const author = post.profiles;
-  const isOwner = user?.id === post.user_id;
 
   const renderCaption = (text: string) => {
     const parts = text.split(/(#[a-zA-Z0-9_]+)/g);
@@ -191,6 +208,10 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             <Button variant="ghost" size="sm" onClick={toggleComments}>
               <MessageCircle className="h-4 w-4" />
               <span className="ml-1.5 text-xs">{comments.length || ""}</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={toggleRepost} className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}>
+              <Repeat2 className="h-4 w-4" />
+              <span className="ml-1.5 text-xs">{repostCount || ""}</span>
             </Button>
             <Button variant="ghost" size="sm" onClick={sharePost}>
               <Share2 className="h-4 w-4" />

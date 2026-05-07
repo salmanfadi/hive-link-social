@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut, user } = useAuth();
@@ -75,6 +76,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <Radio className={`h-3.5 w-3.5 ${peerCount > 0 ? "text-primary animate-pulse" : ""}`} />
             <span>P2P</span>
             <Badge variant="secondary" className="ml-auto">{peerCount} {peerCount === 1 ? "peer" : "peers"}</Badge>
+            <ThemeToggle />
           </div>
           <Button
             className="w-full mb-4 rounded-xl shadow-md"

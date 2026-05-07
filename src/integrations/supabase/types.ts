@@ -146,6 +146,7 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           server_id: string | null
+          signature: string | null
           user_id: string
         }
         Insert: {
@@ -156,6 +157,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           server_id?: string | null
+          signature?: string | null
           user_id: string
         }
         Update: {
@@ -166,6 +168,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           server_id?: string | null
+          signature?: string | null
           user_id?: string
         }
         Relationships: [
@@ -221,6 +224,24 @@ export type Database = {
           updated_at?: string
           username?: string
           wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      reposts: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
         }
         Relationships: []
       }

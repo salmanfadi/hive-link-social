@@ -20,7 +20,16 @@ export type P2PEvent =
   | { type: "dm"; to: string; from: string; text: string; id: string; timestamp: number };
 
 const RTC_CONFIG: RTCConfiguration = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    // Public TURN fallback for strict NATs (best-effort, not for high-volume use)
+    {
+      urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443"],
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+  ],
 };
 
 export function useP2PSync(
