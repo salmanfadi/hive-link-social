@@ -209,6 +209,10 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               <MessageCircle className="h-4 w-4" />
               <span className="ml-1.5 text-xs">{comments.length || ""}</span>
             </Button>
+            <Button variant="ghost" size="sm" onClick={toggleRepost} className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}>
+              <Repeat2 className="h-4 w-4" />
+              <span className="ml-1.5 text-xs">{repostCount || ""}</span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={sharePost}>
               <Share2 className="h-4 w-4" />
             </Button>
