@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign up - Decentra</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --background: #fbfaff;
+        --foreground: #252032;
+        --card: #ffffff;
+        --border: #ddd8e8;
+        --primary: #8750e6;
+        --primary-dark: #6d39c5;
+        --muted: #71677f;
+        --danger: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--background);
+        color: var(--foreground);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px 16px;
+      }
+
+      .card {
+        width: min(100%, 420px);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 18px 50px rgb(38 29 66 / 12%);
+        padding: 28px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: inherit;
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 20px;
+      }
+
+      .mark {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background: rgb(135 80 230 / 12%);
+        color: var(--primary);
+      }
+
+      h1 {
+        margin: 28px 0 6px;
+        font-size: 32px;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      form {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      input {
+        width: 100%;
+        height: 44px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0 12px;
+        background: #fff;
+        color: var(--foreground);
+        font: inherit;
+      }
+
+      input:focus {
+        border-color: var(--primary);
+        outline: 3px solid rgb(135 80 230 / 18%);
+      }
+
+      button {
+        width: 100%;
+        height: 44px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 750;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      a {
+        color: var(--primary);
+        font-weight: 700;
+      }
+
+      .footer {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .message {
+        display: none;
+        margin-top: 18px;
+        border: 1px solid rgb(180 35 24 / 28%);
+        border-radius: 8px;
+        background: rgb(180 35 24 / 8%);
+        color: var(--danger);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .message[data-visible="true"] {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card" aria-labelledby="signup-title">
+        <a class="brand" href="/">
+          <span class="mark">✦</span>
+          <span>Decentra</span>
+        </a>
+        <h1 id="signup-title">Sign up</h1>
+        <p>Create your account with Supabase email auth.</p>
+
+        <div id="message" class="message" role="alert"></div>
+
+        <form id="signup-form" autocomplete="on">
+          <div>
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              placeholder="decentra_user"
+              autocomplete="username"
+              minlength="2"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="email">Email address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@example.com"
+              autocomplete="email"
+              inputmode="email"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Create a password"
+              autocomplete="new-password"
+              minlength="6"
+              required
+            />
+          </div>
+
+          <button id="submit-button" type="submit">Create account</button>
+        </form>
+
+        <p class="footer">Already have an account? <a href="/login.html">Login</a></p>
+      </section>
+    </main>
+
+    <script>
+      const SUPABASE_URL = "https://amgeagtqfvlzxckptkfq.supabase.co";
+      const SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtZ2VhZ3RxZnZsenhja3B0a2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTY1MzIsImV4cCI6MjA5MzY3MjUzMn0.PMZ0DnYTr-njkenAkZUhVAO-jxQmCDLwe2ULw56m_8g";
+      const STORAGE_KEY = "sb-amgeagtqfvlzxckptkfq-auth-token";
+      const form = document.getElementById("signup-form");
+      const message = document.getElementById("message");
+      const submitButton = document.getElementById("submit-button");
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        });
+      }
+      if ("caches" in window) {
+        window.caches.keys().then((keys) => keys.forEach((key) => window.caches.delete(key)));
+      }
+
+      function showMessage(text) {
+        message.textContent = text;
+        message.dataset.visible = text ? "true" : "false";
+      }
+
+      function saveSession(session) {
+        const expiresAt =
+          session.expires_at || Math.floor(Date.now() / 1000) + Number(session.expires_in || 3600);
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: expiresAt,
+            expires_in: session.expires_in,
+            token_type: session.token_type || "bearer",
+            user: session.user,
+          }),
+        );
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        showMessage("");
+        submitButton.disabled = true;
+        submitButton.textContent = "Please wait...";
+
+        try {
+          const username = form.username.value.trim();
+          const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+            method: "POST",
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: form.email.value.trim(),
+              password: form.password.value,
+              data: {
+                username,
+                display_name: username,
+              },
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.msg || data.message || data.error_description);
+          if (data.access_token) {
+            saveSession(data);
+            window.location.href = "/";
+          } else {
+            showMessage("Account created. Check your email if confirmation is required.");
+          }
+        } catch (error) {
+          showMessage(error.message || "Could not create your account. Please try again.");
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Create account";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,4 +1,11 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useRouterState,
+} from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import * as React from "react";
@@ -57,6 +64,18 @@ export const Route = createRootRoute({
  * never initializes on the auth/signup page or during the auth check.
  */
 function RootComponent() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isPublicAuthPage = pathname === "/auth" || pathname === "/login" || pathname === "/signup";
+
+  if (isPublicAuthPage) {
+    return (
+      <>
+        <Outlet />
+        <Toaster />
+      </>
+    );
+  }
+
   return (
     <AuthProvider>
       <Outlet />

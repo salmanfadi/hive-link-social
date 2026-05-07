@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ServersRouteImport } from './routes/servers'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -16,12 +17,18 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
 import { Route as TagsTagRouteImport } from './routes/tags.$tag'
 import { Route as SSlugRouteImport } from './routes/s.$slug'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServersRoute = ServersRouteImport.update({
   id: '/servers',
   path: '/servers',
@@ -57,6 +64,11 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -86,6 +98,7 @@ const SSlugRoute = SSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
@@ -93,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
+  '/signup': typeof SignupRoute
   '/s/$slug': typeof SSlugRoute
   '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
@@ -100,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
+  '/signup': typeof SignupRoute
   '/s/$slug': typeof SSlugRoute
   '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
@@ -115,6 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/new': typeof NewRoute
   '/notifications': typeof NotificationsRoute
@@ -122,6 +139,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/servers': typeof ServersRoute
+  '/signup': typeof SignupRoute
   '/s/$slug': typeof SSlugRoute
   '/tags/$tag': typeof TagsTagRoute
   '/u/$username': typeof UUsernameRoute
@@ -131,6 +149,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/login'
     | '/messages'
     | '/new'
     | '/notifications'
@@ -138,6 +157,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/servers'
+    | '/signup'
     | '/s/$slug'
     | '/tags/$tag'
     | '/u/$username'
@@ -145,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/login'
     | '/messages'
     | '/new'
     | '/notifications'
@@ -152,6 +173,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/servers'
+    | '/signup'
     | '/s/$slug'
     | '/tags/$tag'
     | '/u/$username'
@@ -159,6 +181,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/login'
     | '/messages'
     | '/new'
     | '/notifications'
@@ -166,6 +189,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/search'
     | '/servers'
+    | '/signup'
     | '/s/$slug'
     | '/tags/$tag'
     | '/u/$username'
@@ -174,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
   NewRoute: typeof NewRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -181,6 +206,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   ServersRoute: typeof ServersRoute
+  SignupRoute: typeof SignupRoute
   SSlugRoute: typeof SSlugRoute
   TagsTagRoute: typeof TagsTagRoute
   UUsernameRoute: typeof UUsernameRoute
@@ -188,6 +214,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/servers': {
       id: '/servers'
       path: '/servers'
@@ -237,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -278,6 +318,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
   NewRoute: NewRoute,
   NotificationsRoute: NotificationsRoute,
@@ -285,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   ServersRoute: ServersRoute,
+  SignupRoute: SignupRoute,
   SSlugRoute: SSlugRoute,
   TagsTagRoute: TagsTagRoute,
   UUsernameRoute: UUsernameRoute,
