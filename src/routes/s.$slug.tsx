@@ -6,7 +6,10 @@ import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Users, ArrowBigUp, ArrowBigDown, Shield } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Users, ArrowBigUp, ArrowBigDown, Shield, Settings, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/s/$slug")({
