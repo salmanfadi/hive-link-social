@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert, Repeat2 } from "lucide-react";
 import { importPublicKey, verifyData } from "@/services/crypto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
