@@ -14,6 +14,10 @@ social app.
 - Communities (servers): create, join, leave, member counts, rule up/down votes
 - User profiles: edit, avatar upload, identity export/import (JSON)
 - MetaMask wallet linking (`wallet_address` on profile)
+- **Following feed** — separate `/following` tab showing only posts from users you follow
+- **Hashtags** — extracted `#tags` from captions, clickable to trending tag pages
+- **Cryptographic post signing** — posts are signed with client-side Ed25519 keys and verified in-browser
+- **Direct messages** — encrypted 1:1 chat over direct WebRTC channels
 
 ### Decentralized layer
 - **WebRTC P2P sync** — peers discover each other via Supabase Realtime presence,
@@ -30,14 +34,10 @@ social app.
 ## 🚧 Pending
 
 ### High priority
-- [ ] **Following feed** — separate `/following` tab showing only posts from
-      users you follow (current home is a global feed)
-- [ ] **Cryptographic post signing** — sign each post with the profile's
-      private key so peers can verify authorship without trusting the server
-- [ ] **Direct messages** — encrypted 1:1 chat over the existing WebRTC
-      channels with Signal-style key exchange
-- [ ] **Hashtags** — extract `#tags` from captions, index them, build
-      trending + tag pages
+- [ ] **Federated server discovery** — opt-in directory + cross-instance
+      following (ActivityPub-style)
+- [ ] **TURN servers** for P2P connectivity behind strict NATs (currently
+      only STUN, fails on some networks)
 
 ### Medium priority
 - [ ] **Repost / quote-post**

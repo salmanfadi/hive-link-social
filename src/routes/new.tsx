@@ -18,7 +18,7 @@ export const Route = createFileRoute("/new")({
 });
 
 function NewPost() {
-  const { user, profile } = useAuth();
+  const { user, profile, sign } = useAuth();
   const { broadcastNewPost } = useP2P();
   const navigate = useNavigate();
   const [caption, setCaption] = useState("");
@@ -70,6 +70,10 @@ function NewPost() {
         ipfs_hash = "Qm" + btoa(path).replace(/[^a-zA-Z0-9]/g, "").slice(0, 44);
       }
     }
+    const createdAt = new Date().toISOString();
+    const payload = `${caption.trim() || ""}:${media_url || ""}:${createdAt}`;
+    const signature = await sign(payload);
+
     const { data: inserted, error } = await supabase.from("posts").insert({
       user_id: user.id,
       caption: caption.trim() || null,
@@ -77,7 +81,9 @@ function NewPost() {
       media_type,
       ipfs_hash,
       server_id: serverId === "none" ? null : serverId,
-    }).select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)").single();
+      created_at: createdAt,
+      signature,
+    }).select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)").single();
     setSubmitting(false);
     if (error) toast.error(error.message);
     else {

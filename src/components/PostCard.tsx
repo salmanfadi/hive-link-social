@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Heart, MessageCircle, Share2, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { importPublicKey, verifyData } from "@/services/crypto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +18,8 @@ export type PostWithMeta = {
   media_type: string | null;
   ipfs_hash: string | null;
   created_at: string;
-  profiles: { username: string; display_name: string | null; avatar_url: string | null } | null;
+  signature: string | null;
+  profiles: { username: string; display_name: string | null; avatar_url: string | null; public_key: string } | null;
   servers: { name: string; slug: string } | null;
 };
 
@@ -30,6 +31,25 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
+  const [verified, setVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!post.signature || !author?.public_key) {
+      setVerified(false);
+      return;
+    }
+    (async () => {
+      try {
+        const pub = await importPublicKey(author.public_key);
+        const payload = `${post.caption || ""}:${post.media_url || ""}:${post.created_at}`;
+        const isOk = await verifyData(pub, post.signature!, payload);
+        setVerified(isOk);
+      } catch (e) {
+        console.error("Verification error", e);
+        setVerified(false);
+      }
+    })();
+  }, [post.signature, author?.public_key, post.caption, post.media_url, post.created_at]);
 
   useEffect(() => {
     (async () => {
@@ -89,6 +109,25 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const author = post.profiles;
   const isOwner = user?.id === post.user_id;
 
+  const renderCaption = (text: string) => {
+    const parts = text.split(/(#[a-zA-Z0-9_]+)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("#")) {
+        return (
+          <Link
+            key={i}
+            to="/tags/$tag"
+            params={{ tag: part.slice(1).toLowerCase() }}
+            className="text-primary hover:underline font-medium"
+          >
+            {part}
+          </Link>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <article className="border-b border-border p-4 hover:bg-secondary/30 transition-colors">
       <div className="flex gap-3">
@@ -108,6 +147,12 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             <span className="text-muted-foreground text-xs">
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </span>
+            {verified !== null && (
+              <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border ${verified ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
+                {verified ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
+                {verified ? "Verified" : "Unverified"}
+              </div>
+            )}
             {post.servers && (
               <>
                 <span className="text-muted-foreground">·</span>
@@ -122,7 +167,7 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               </Button>
             )}
           </div>
-          {post.caption && <p className="mt-1 whitespace-pre-wrap break-words">{post.caption}</p>}
+          {post.caption && <p className="mt-1 whitespace-pre-wrap break-words">{renderCaption(post.caption)}</p>}
           {post.media_url && !imgFailed && (
             <div className="mt-3 rounded-xl overflow-hidden border border-border">
               {post.media_type?.startsWith("video") ? (

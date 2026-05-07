@@ -30,7 +30,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("posts").select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)")
+    supabase.from("posts").select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
       .eq("user_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => setPosts((data as any) ?? []));
   }, [user]);

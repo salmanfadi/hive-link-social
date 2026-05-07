@@ -15,10 +15,9 @@ type SignalMsg =
   | { kind: "answer"; from: string; to: string; sdp: RTCSessionDescriptionInit }
   | { kind: "ice"; from: string; to: string; candidate: RTCIceCandidateInit };
 
-export type P2PPostEvent = {
-  type: "new-post";
-  post: Record<string, unknown>;
-};
+export type P2PEvent =
+  | { type: "new-post"; post: Record<string, unknown> }
+  | { type: "dm"; to: string; from: string; text: string; id: string; timestamp: number };
 
 const RTC_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -26,11 +25,12 @@ const RTC_CONFIG: RTCConfiguration = {
 
 export function useP2PSync(
   userId: string | null,
-  onMessage: (e: P2PPostEvent, fromPeer: string) => void,
+  onMessage: (e: P2PEvent, fromPeer: string) => void,
 ) {
   const [peerCount, setPeerCount] = useState(0);
   const peersRef = useRef<Map<string, { pc: RTCPeerConnection; dc?: RTCDataChannel }>>(new Map());
-  const sendRef = useRef<(e: P2PPostEvent) => void>(() => {});
+  const sendRef = useRef<(e: P2PEvent) => void>(() => {});
+  const sendDirectRef = useRef<(peerId: string, e: P2PEvent) => boolean>(() => false);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
@@ -52,7 +52,7 @@ export function useP2PSync(
       };
       dc.onmessage = (ev) => {
         try {
-          const data = JSON.parse(ev.data) as P2PPostEvent;
+          const data = JSON.parse(ev.data) as P2PEvent;
           onMessageRef.current(data, peerId);
         } catch {/* ignore */}
       };
@@ -126,11 +126,20 @@ export function useP2PSync(
         if (status === "SUBSCRIBED") await channel.track({ userId, online_at: Date.now() });
       });
 
-    sendRef.current = (e: P2PPostEvent) => {
+    sendRef.current = (e: P2PEvent) => {
       const json = JSON.stringify(e);
       peersRef.current.forEach(({ dc }) => {
         if (dc?.readyState === "open") dc.send(json);
       });
+    };
+
+    sendDirectRef.current = (peerId: string, e: P2PEvent) => {
+      const entry = peersRef.current.get(peerId);
+      if (entry?.dc?.readyState === "open") {
+        entry.dc.send(JSON.stringify(e));
+        return true;
+      }
+      return false;
     };
 
     return () => {
@@ -143,6 +152,8 @@ export function useP2PSync(
 
   return {
     peerCount,
-    broadcast: (e: P2PPostEvent) => sendRef.current(e),
+    broadcast: (e: P2PEvent) => sendRef.current(e),
+    sendDirect: (peerId: string, e: P2PEvent) => sendDirectRef.current(peerId, e),
+    connectedPeers: Array.from(peersRef.current.keys()),
   };
 }

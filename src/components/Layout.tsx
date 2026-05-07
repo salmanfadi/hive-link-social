@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search } from "lucide-react";
+import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search, MessageCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useP2P } from "@/lib/p2p-context";
@@ -68,6 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
             {navItem("/search", <Search className="h-5 w-5" />, "Search")}
             {navItem("/notifications", <Bell className="h-5 w-5" />, "Notifications", unread)}
             {navItem("/servers", <Users className="h-5 w-5" />, "Communities")}
+            {navItem("/messages", <MessageCircle className="h-5 w-5" />, "Messages")}
             {navItem("/profile", <User className="h-5 w-5" />, "Profile")}
           </nav>
           <div className="mb-3 px-2 hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
@@ -112,6 +113,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-background border-t border-border flex justify-around p-2 z-50">
           <Link to="/" className="p-3"><Home className="h-6 w-6" /></Link>
           <Link to="/search" className="p-3"><Search className="h-6 w-6" /></Link>
+          <Link to="/messages" className="p-3"><MessageCircle className="h-6 w-6" /></Link>
           <Link to="/new" className="p-3"><PlusSquare className="h-6 w-6 text-primary" /></Link>
           <Link to="/notifications" className="p-3 relative">
             <Bell className="h-6 w-6" />

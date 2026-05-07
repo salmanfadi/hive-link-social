@@ -8,6 +8,7 @@ import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cacheFeed, getCachedFeed } from "@/lib/cache";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -24,25 +25,46 @@ function Home() {
   const { onInboundPost } = useP2P();
   const [posts, setPosts] = useState<PostWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feedType, setFeedType] = useState<"global" | "following">("global");
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data, error } = await supabase
+      setLoading(true);
+      let query = supabase
         .from("posts")
-        .select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)")
+        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)");
+
+      if (feedType === "following") {
+        const { data: follows } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
+        
+        const followingIds = (follows?.map(f => f.following_id) || []);
+        // Also include user's own posts in following feed usually, or not? 
+        // Let's stick to following for now.
+        query = query.in("user_id", followingIds);
+      }
+
+      const { data, error } = await query
         .order("created_at", { ascending: false })
         .limit(50);
+
       if (error || !data) {
-        const cached = getCachedFeed<PostWithMeta>();
-        setPosts(cached);
+        if (feedType === "global") {
+          const cached = getCachedFeed<PostWithMeta>();
+          setPosts(cached);
+        } else {
+          setPosts([]);
+        }
       } else {
         setPosts(data as any);
-        cacheFeed(data);
+        if (feedType === "global") cacheFeed(data);
       }
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, feedType]);
 
   useEffect(() => {
     return onInboundPost((post, fromPeer) => {
@@ -60,9 +82,29 @@ function Home() {
 
   return (
     <Layout>
-      <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 py-4">
-        <h1 className="text-xl font-bold">Home Feed</h1>
-        <p className="text-xs text-muted-foreground">Federated content · IPFS-pinned media · live P2P relay</p>
+      <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-xl font-bold">Home Feed</h1>
+            <p className="text-xs text-muted-foreground">Federated content · IPFS-pinned media · live P2P relay</p>
+          </div>
+        </div>
+        <Tabs value={feedType} onValueChange={(v) => setFeedType(v as any)} className="w-full">
+          <TabsList className="w-full justify-start h-auto p-0 bg-transparent gap-6">
+            <TabsTrigger 
+              value="global" 
+              className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
+            >
+              Global
+            </TabsTrigger>
+            <TabsTrigger 
+              value="following" 
+              className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
+            >
+              Following
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </header>
       {loading ? (
         <div className="p-4 space-y-4">
