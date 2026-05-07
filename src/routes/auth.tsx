@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -40,12 +40,12 @@ type AuthMode = "login" | "signup";
 
 function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -57,21 +57,6 @@ function AuthPage() {
     }
   }, [authLoading, navigate, user]);
 
-  const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setEmail(event.target.value);
-    setMessage(null);
-  };
-
-  const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setPassword(event.target.value);
-    setMessage(null);
-  };
-
-  const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setUsername(event.target.value);
-    setMessage(null);
-  };
-
   const switchMode = () => {
     setMode((current) => (current === "login" ? "signup" : "login"));
     setMessage(null);
@@ -82,8 +67,9 @@ function AuthPage() {
     event.preventDefault();
     if (isSubmitting) return;
 
-    const cleanEmail = email.trim();
-    const cleanUsername = username.trim();
+    const cleanEmail = emailRef.current?.value.trim() ?? "";
+    const password = passwordRef.current?.value ?? "";
+    const cleanUsername = usernameRef.current?.value.trim() ?? "";
 
     if (!cleanEmail || !password || (isSignup && !cleanUsername)) {
       setMessage("Please fill in every required field.");
@@ -153,7 +139,7 @@ function AuthPage() {
   };
 
   const handlePasswordReset = async () => {
-    const cleanEmail = email.trim();
+    const cleanEmail = emailRef.current?.value.trim() ?? "";
 
     if (!cleanEmail) {
       setMessage("Enter your email address first.");
@@ -253,16 +239,16 @@ function AuthPage() {
                     <div className="relative">
                       <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
+                        ref={usernameRef}
                         id="username"
                         name="username"
                         className="h-11 pl-10"
                         placeholder="decentra_user"
-                        value={username}
-                        onChange={handleUsernameChange}
                         required={isSignup}
                         minLength={2}
                         autoComplete="username"
                         spellCheck={false}
+                        onFocus={() => setMessage(null)}
                       />
                     </div>
                   </div>
@@ -273,17 +259,17 @@ function AuthPage() {
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      ref={emailRef}
                       id="email"
                       name="email"
                       type="email"
                       className="h-11 pl-10"
                       placeholder="name@example.com"
-                      value={email}
-                      onChange={handleEmailChange}
                       required
                       autoComplete="email"
                       inputMode="email"
                       spellCheck={false}
+                      onFocus={() => setMessage(null)}
                     />
                   </div>
                 </div>
@@ -304,16 +290,16 @@ function AuthPage() {
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      ref={passwordRef}
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
                       className="h-11 pl-10 pr-11"
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={handlePasswordChange}
                       required
                       minLength={6}
                       autoComplete={isSignup ? "new-password" : "current-password"}
+                      onFocus={() => setMessage(null)}
                     />
                     <button
                       type="button"
