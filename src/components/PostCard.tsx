@@ -28,6 +28,8 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const { user } = useAuth();
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
+  const [reposted, setReposted] = useState(false);
   const [comments, setComments] = useState<Array<{ id: string; content: string; created_at: string; profiles: { username: string; avatar_url: string | null } | null }>>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -58,12 +60,27 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
     (async () => {
       const { count } = await supabase.from("likes").select("*", { count: "exact", head: true }).eq("post_id", post.id);
       setLikeCount(count ?? 0);
+      const { count: rc } = await supabase.from("reposts").select("*", { count: "exact", head: true }).eq("post_id", post.id);
+      setRepostCount(rc ?? 0);
       if (user) {
         const { data } = await supabase.from("likes").select("post_id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle();
         setLiked(!!data);
+        const { data: r } = await supabase.from("reposts").select("post_id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle();
+        setReposted(!!r);
       }
     })();
   }, [post.id, user]);
+
+  const toggleRepost = async () => {
+    if (!user) return;
+    if (reposted) {
+      await supabase.from("reposts").delete().eq("post_id", post.id).eq("user_id", user.id);
+      setRepostCount((c) => c - 1); setReposted(false);
+    } else {
+      await supabase.from("reposts").insert({ post_id: post.id, user_id: user.id });
+      setRepostCount((c) => c + 1); setReposted(true);
+    }
+  };
 
   const toggleLike = async () => {
     if (!user) return;
