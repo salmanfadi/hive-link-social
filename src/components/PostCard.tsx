@@ -36,8 +36,20 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const [newComment, setNewComment] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
   const [verified, setVerified] = useState<boolean | null>(null);
+  const [quoted, setQuoted] = useState<PostWithMeta | null>(null);
+  const navigate = useNavigate();
   const author = post.profiles;
   const isOwner = user?.id === post.user_id;
+
+  useEffect(() => {
+    if (!post.quoted_post_id) { setQuoted(null); return; }
+    (async () => {
+      const { data } = await supabase.from("posts")
+        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
+        .eq("id", post.quoted_post_id!).maybeSingle();
+      setQuoted((data as any) ?? null);
+    })();
+  }, [post.quoted_post_id]);
 
   useEffect(() => {
     if (!post.signature || !author?.public_key) {
