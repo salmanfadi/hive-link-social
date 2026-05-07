@@ -109,9 +109,6 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
     try { await navigator.clipboard.writeText(url); toast.success("Link copied"); } catch { toast.info(url); }
   };
 
-  const author = post.profiles;
-  const isOwner = user?.id === post.user_id;
-
   const renderCaption = (text: string) => {
     const parts = text.split(/(#[a-zA-Z0-9_]+)/g);
     return parts.map((part, i) => {
