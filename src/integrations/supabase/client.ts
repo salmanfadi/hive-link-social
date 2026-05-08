@@ -2,11 +2,31 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+declare global {
+  interface Window {
+    __DECENTRA_ENV__?: {
+      SUPABASE_URL?: string;
+      SUPABASE_PUBLISHABLE_KEY?: string;
+    };
+  }
+}
+
+function getRuntimeEnv(key: 'SUPABASE_URL' | 'SUPABASE_PUBLISHABLE_KEY') {
+  if (typeof window !== 'undefined') {
+    return window.__DECENTRA_ENV__?.[key];
+  }
+
+  if (typeof process !== 'undefined') {
+    return process.env[key];
+  }
+
+  return undefined;
+}
+
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || getRuntimeEnv('SUPABASE_URL');
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || getRuntimeEnv('SUPABASE_PUBLISHABLE_KEY');
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

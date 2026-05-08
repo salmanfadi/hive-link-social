@@ -2,8 +2,6 @@ import {
   Outlet,
   Link,
   createRootRoute,
-  HeadContent,
-  Scripts,
   useRouterState,
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
@@ -33,20 +31,11 @@ function NotFoundComponent() {
   );
 }
 
-// RootShell: SSR HTML shell. <Scripts /> injects the client JS bundle (virtual:tanstack-start-client-entry).
-// client.tsx imports styles.css which Vite injects as <style> tags on the client.
 function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <HeadContent />
-      {children}
-      <Scripts />
-    </>
-  );
+  return <>{children}</>;
 }
 
 export const Route = createRootRoute({
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
@@ -58,23 +47,25 @@ export const Route = createRootRoute({
  */
 function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isPublicAuthPage = pathname === "/signup";
+  const isPublicAuthPage = pathname === "/login" || pathname === "/signup";
 
   if (isPublicAuthPage) {
     return (
-      <>
+      <RootShell>
         <Outlet />
         <Toaster />
-      </>
+      </RootShell>
     );
   }
 
   return (
-    <AuthProvider>
-      <P2PProvider>
-        <Outlet />
-        <Toaster />
-      </P2PProvider>
-    </AuthProvider>
+    <RootShell>
+      <AuthProvider>
+        <P2PProvider>
+          <Outlet />
+          <Toaster />
+        </P2PProvider>
+      </AuthProvider>
+    </RootShell>
   );
 }
