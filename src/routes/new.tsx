@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ImagePlus, X } from "lucide-react";
 import { pinFileToIPFS } from "@/server/pinata.functions";
 import { useP2P } from "@/lib/p2p-context";
+import { POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
 
 export const Route = createFileRoute("/new")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -37,7 +38,7 @@ function NewPost() {
     if (!quote) return;
     (async () => {
       const { data } = await supabase.from("posts")
-        .select("caption, profiles!inner(username)").eq("id", quote).maybeSingle();
+        .select("caption, profiles!posts_user_id_fkey(username)").eq("id", quote).maybeSingle();
       if (data) setQuotedPreview({ caption: (data as any).caption, username: (data as any).profiles.username });
     })();
   }, [quote]);
@@ -101,7 +102,7 @@ function NewPost() {
       created_at: createdAt,
       signature,
       quoted_post_id: quote ?? null,
-    }).select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)").single();
+    }).select(POST_WITH_AUTHOR_AND_SERVER_SELECT).single();
     setSubmitting(false);
     if (error) toast.error(error.message);
     else {

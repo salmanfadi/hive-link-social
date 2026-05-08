@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Users, ArrowBigUp, ArrowBigDown, Shield, Settings, Ban } from "lucide-react";
 import { toast } from "sonner";
+import { POST_WITH_AUTHOR_AND_SERVER_LITE_SELECT, SERVER_MEMBER_WITH_PROFILE_SELECT } from "@/lib/query-selects";
 
 export const Route = createFileRoute("/s/$slug")({
   component: ServerPage,
@@ -34,7 +35,7 @@ function ServerPage() {
     if (!s) { setLoading(false); return; }
     setServer(s as Server);
     const [{ data: p }, { count }, { data: vAll }, { data: vMine }] = await Promise.all([
-      supabase.from("posts").select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)").eq("server_id", s.id).order("created_at", { ascending: false }),
+      supabase.from("posts").select(POST_WITH_AUTHOR_AND_SERVER_LITE_SELECT).eq("server_id", s.id).order("created_at", { ascending: false }),
       supabase.from("server_members").select("*", { count: "exact", head: true }).eq("server_id", s.id),
       supabase.from("rule_votes").select("vote").eq("server_id", s.id),
       user ? supabase.from("rule_votes").select("vote").eq("server_id", s.id).eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
@@ -153,7 +154,7 @@ function ModerationDialog({ server, onChange }: { server: Server; onChange: () =
   const loadMembers = async () => {
     const { data } = await supabase
       .from("server_members")
-      .select("user_id, profiles!inner(username, display_name)")
+      .select(SERVER_MEMBER_WITH_PROFILE_SELECT)
       .eq("server_id", server.id);
     setMembers(((data as any) ?? []).map((r: any) => ({
       user_id: r.user_id, username: r.profiles.username, display_name: r.profiles.display_name,

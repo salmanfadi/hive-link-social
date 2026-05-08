@@ -44,6 +44,7 @@ export function useP2PSync(
   onMessage: (e: P2PEvent, fromPeer: string) => void,
 ) {
   const [peerCount, setPeerCount] = useState(0);
+  const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const peersRef = useRef<Map<string, { pc: RTCPeerConnection; dc?: RTCDataChannel }>>(new Map());
   const iceTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const sendRef = useRef<(e: P2PEvent) => void>(() => {});
@@ -58,7 +59,10 @@ export function useP2PSync(
       config: { presence: { key: userId }, broadcast: { self: false } },
     });
 
-    const updateCount = () => setPeerCount(peersRef.current.size);
+    const updatePeerState = () => {
+      setPeerCount(peersRef.current.size);
+      setConnectedPeers(Array.from(peersRef.current.keys()));
+    };
 
     const clearIceTimer = (peerId: string) => {
       const t = iceTimersRef.current.get(peerId);
@@ -71,7 +75,7 @@ export function useP2PSync(
     const removePeer = (peerId: string) => {
       clearIceTimer(peerId);
       peersRef.current.delete(peerId);
-      updateCount();
+      updatePeerState();
     };
 
     const wireDataChannel = (peerId: string, dc: RTCDataChannel) => {
@@ -80,7 +84,7 @@ export function useP2PSync(
       dc.onopen = () => {
         // Connection fully established — cancel the ICE timeout
         clearIceTimer(peerId);
-        updateCount();
+        updatePeerState();
       };
       dc.onclose = () => removePeer(peerId);
       dc.onmessage = (ev) => {
@@ -103,6 +107,7 @@ export function useP2PSync(
 
       const pc = new RTCPeerConnection(RTC_CONFIG);
       peersRef.current.set(peerId, { pc });
+      updatePeerState();
 
       // ICE timeout — destroy the connection if it doesn't reach "connected" in time
       const timer = setTimeout(() => {
@@ -208,6 +213,8 @@ export function useP2PSync(
       iceTimersRef.current.clear();
       peersRef.current.forEach(({ pc }) => pc.close());
       peersRef.current.clear();
+      setPeerCount(0);
+      setConnectedPeers([]);
       supabase.removeChannel(channel);
       sendRef.current = () => {};
     };
@@ -217,6 +224,6 @@ export function useP2PSync(
     peerCount,
     broadcast: (e: P2PEvent) => sendRef.current(e),
     sendDirect: (peerId: string, e: P2PEvent) => sendDirectRef.current(peerId, e),
-    connectedPeers: Array.from(peersRef.current.keys()),
+    connectedPeers,
   };
 }

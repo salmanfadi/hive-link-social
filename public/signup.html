@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Sign up - Decentra</title>
     <style>
       :root {
@@ -359,6 +360,12 @@
         submitButton.disabled = true;
       }
 
+      sbClient.auth.getSession().then(({ data }) => {
+        if (data?.session) window.location.replace("/");
+      }).catch((e) => {
+        console.warn("[Signup] Session pre-check failed", e);
+      });
+
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           registrations.forEach((registration) => registration.unregister());
@@ -443,7 +450,7 @@
           
           if (data.session) {
             console.log("[Signup] Logged in immediately, redirecting home");
-            window.location.assign("/");
+            window.location.replace("/");
           } else {
             console.log("[Signup] Account created, awaiting email confirmation");
             showMessage(

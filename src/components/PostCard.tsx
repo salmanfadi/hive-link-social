@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { COMMENT_WITH_AUTHOR_SELECT, POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
 import { toast } from "sonner";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -46,7 +47,7 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
     if (!post.quoted_post_id) { setQuoted(null); return; }
     (async () => {
       const { data } = await supabase.from("posts")
-        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
+        .select(POST_WITH_AUTHOR_AND_SERVER_SELECT)
         .eq("id", post.quoted_post_id!).maybeSingle();
       setQuoted((data as any) ?? null);
     })();
@@ -110,7 +111,7 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const loadComments = async () => {
     const { data } = await supabase
       .from("comments")
-      .select("id, content, created_at, profiles!inner(username, avatar_url)")
+      .select(COMMENT_WITH_AUTHOR_SELECT)
       .eq("post_id", post.id)
       .order("created_at", { ascending: true });
     setComments((data as any) ?? []);

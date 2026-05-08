@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Login - Decentra</title>
     <style>
       :root {
@@ -305,7 +306,7 @@
 
           <div id="message" class="message" role="alert" aria-live="polite"></div>
 
-          <form id="login-form" autocomplete="on" novalidate method="post" action="javascript:void(0)">
+          <form id="login-form" autocomplete="off" novalidate method="post" action="javascript:void(0)">
             <div>
               <label for="email">Email address</label>
               <input
@@ -365,13 +366,14 @@
       const passwordInput = document.getElementById("password");
       const query = new URLSearchParams(window.location.search);
 
-      if (query.get("email")) emailInput.value = query.get("email");
       if (query.get("verified") === "1") {
         showMessage("Email verified successfully. You can login now.", "success");
       }
-      if (query.get("email") || query.get("verified")) {
+      if (query.get("verified")) {
         window.history.replaceState({}, "", "/login.html");
       }
+      emailInput.value = "";
+      passwordInput.value = "";
 
       if (!SUPABASE_URL || !SUPABASE_KEY) {
         showMessage("Missing Supabase runtime config. Check runtime-env.js.");
@@ -442,52 +444,20 @@
         return msg;
       }
 
-      async function ensureSessionPersisted(session) {
-        console.log("[Session] Checking if session is persisted...");
-        
-        // First check if already in auth state
-        const { data: check } = await sbClient.auth.getSession();
-        if (check?.session) {
-          console.log("[Session] ✓ Session already persisted in auth state");
-          return check.session;
-        }
-        
-        // If not, try to set it manually
-        if (session?.access_token && session?.refresh_token) {
-          console.log("[Session] Setting session with access/refresh tokens...");
-          const { data, error } = await sbClient.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          });
-          if (error) {
-            console.error("[Session] Error setting session:", error);
-            throw error;
+      async function redirectIfAlreadyLoggedIn() {
+        try {
+          const { data } = await sbClient.auth.getSession();
+          if (data?.session) {
+            window.location.replace("/");
+            return true;
           }
-          
-          console.log("[Session] ✓ Session set successfully");
-          
-          // Wait a bit for localStorage to sync
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Verify it's actually in localStorage
-          const storageKey = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
-          const stored = localStorage.getItem(storageKey);
-          console.log("[Session] localStorage check:", stored ? "✓ Present" : "✗ Missing");
-          
-          // Do one more check
-          const { data: finalCheck } = await sbClient.auth.getSession();
-          if (finalCheck?.session) {
-            console.log("[Session] ✓ Final check: Session confirmed");
-            return finalCheck.session;
-          } else {
-            console.warn("[Session] ⚠ Session not found after setting");
-            return data?.session || null;
-          }
+        } catch (e) {
+          console.warn("[Login] Session pre-check failed", e);
         }
-        
-        console.error("[Session] ✗ No tokens available to persist");
-        return null;
+        return false;
       }
+
+      redirectIfAlreadyLoggedIn();
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -517,30 +487,14 @@
             throw new Error("Login succeeded but no session was created. Please retry.");
           }
 
-          submitButton.textContent = "Persisting session...";
-          
-          const persisted = await ensureSessionPersisted(data.session);
-          if (!persisted) {
+          submitButton.textContent = "Finalizing session...";
+          const { data: checkData } = await sbClient.auth.getSession();
+          if (!checkData?.session) {
             throw new Error("Session could not be persisted in browser storage.");
           }
 
-          console.log("[Login] Session persisted, waiting before redirect...");
           submitButton.textContent = "Redirecting...";
-          
-          // Wait extra time to ensure everything is synced
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Verify one more time that session exists before redirecting
-          const { data: finalCheck } = await sbClient.auth.getSession();
-          if (finalCheck?.session) {
-            console.log("[Login] ✓ Final verification: Session confirmed, redirecting to home");
-            console.log("[Login] Session user:", finalCheck.session.user.email);
-            // Use replace instead of href to prevent back button issues
-            window.location.replace("/");
-          } else {
-            console.warn("[Login] ⚠ Session not found before redirect, but attempting anyway");
-            window.location.replace("/");
-          }
+          window.location.replace("/");
         } catch (error) {
           console.error("[Login] Caught error:", error);
           showMessage(normalizeAuthError(error));

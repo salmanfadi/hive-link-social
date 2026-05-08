@@ -47,8 +47,8 @@ These are the bugs found in the current codebase that must be fixed before addin
 ### Phase 1 — P2P Layer (Priority: CRITICAL — fixes login freeze)
 - [x] **`use-p2p-sync.ts`** — Add `MAX_ACTIVE_PEERS = 5` cap + 10-second ICE timeout per peer connection
 - [x] **`p2p-context.tsx`** — Add 5-second delayed initialization after mount (P2P must not start during auth/first render)
-- [x] **`__root.tsx`** — Remove `<P2PProvider>` from root layout (P2P must never run on the auth page)
-- [x] **`Layout.tsx` + `p2p-context.tsx`** — `Layout` now owns `P2PProvider`; `useP2P()` returns safe no-op context when outside Provider
+- [x] **`__root.tsx`** — Mount `<P2PProvider>` once under `<AuthProvider>` to prevent per-route remount storms
+- [x] **`Layout.tsx` + `p2p-context.tsx`** — `Layout` now consumes P2P context only; provider value memoized to reduce cascade rerenders
 
 ### Phase 2 — Crypto/Identity Layer (Priority: HIGH — post signing is broken for new users)
 - [x] **`auth-context.tsx` `loadKeys()`** — Fixed: `importPublicKey()` now gracefully handles the DB placeholder key; generates a real Ed25519 pair on first login and pushes real public key to DB
@@ -59,6 +59,39 @@ These are the bugs found in the current codebase that must be fixed before addin
 
 ### Phase 4 — Documentation
 - [x] **`PENDING.md`** — Updated
+
+---
+
+## 🚨 Immediate Pending (New)
+
+### Security
+- [ ] **Rotate Pinata JWT immediately** (token was shared in chat). Treat current JWT as compromised.
+- [ ] Store Pinata JWT only in server env vars (never client, never committed files, never chat logs).
+- [x] Add a startup health check for missing/invalid/expired Pinata token in `pinata.functions.ts`.
+
+### Supabase query stability
+- [x] Replaced ambiguous embeds (`profiles!inner(...)`) with explicit FK joins:
+  - `profiles!posts_user_id_fkey(...)`
+  - `profiles!comments_user_id_fkey(...)`
+  - `profiles!server_members_user_id_fkey(...)`
+- [x] Add a tiny shared query helper/constants for post/profile selects so FK names are not duplicated across routes.
+- [ ] Add integration test for "create post + load feed + quoted post + comments" to catch relationship regressions.
+
+### Wallet / MetaMask
+- [x] Wallet connect now resolves MetaMask from `window.ethereum.providers` and waits for delayed injection (`ethereum#initialized`).
+- [ ] Add support for EIP-6963 provider discovery events for multi-wallet browsers.
+- [ ] Add chain/network validation in wallet connect flow (e.g., require specific chain IDs and show switch UI).
+
+### P2P reliability
+- [ ] Add channel lifecycle metrics (active channels, peer count, reconnect attempts) to detect subscription storms early.
+- [ ] Persist a lightweight peer session log (last 100 events) for freeze debugging.
+- [ ] Backoff reconnect strategy for failed ICE connections to avoid repeated storms on unstable networks.
+- [ ] Move TURN credentials to env-backed self-hosted TURN before production.
+
+### Upload pipeline (Supabase + IPFS)
+- [ ] Track and store upload statuses per post (`supabase_uploaded`, `ipfs_pinned`, `ipfs_failed_reason`).
+- [ ] Add retry queue for failed Pinata pin operations instead of generating synthetic fallback hashes.
+- [ ] Surface partial-success UI: "Posted to Supabase; IPFS pin pending/retrying".
 
 ---
 

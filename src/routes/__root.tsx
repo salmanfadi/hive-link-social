@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
+import { P2PProvider } from "@/lib/p2p-context";
 import { Toaster } from "@/components/ui/sonner";
 import * as React from "react";
 
@@ -39,6 +40,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <>
       <HeadContent />
       {children}
+      <Scripts />
     </>
   );
 }
@@ -69,8 +71,10 @@ function RootComponent() {
 
   return (
     <AuthProvider>
-      <Outlet />
-      <Toaster />
+      <P2PProvider>
+        <Outlet />
+        <Toaster />
+      </P2PProvider>
     </AuthProvider>
   );
 }

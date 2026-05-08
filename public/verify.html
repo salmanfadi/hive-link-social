@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Verifying email - Decentra</title>
     <style>
       :root {
@@ -236,7 +237,7 @@
             actionButtons.classList.remove("hidden");
             
             setTimeout(() => {
-              window.location.replace("/login.html?verified=1&email=" + encodeURIComponent(searchParams.get("email") || ""));
+              window.location.replace("/login.html?verified=1");
             }, 2000);
           }
         } catch (error) {

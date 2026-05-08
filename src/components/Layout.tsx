@@ -2,24 +2,15 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search, MessageCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { P2PProvider, useP2P } from "@/lib/p2p-context";
+import { useP2P } from "@/lib/p2p-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-/**
- * Layout wraps all authenticated pages.
- * P2PProvider is mounted here (not in root) so WebRTC only initialises
- * after the user is logged in and inside the main app.
- */
 export function Layout({ children }: { children: ReactNode }) {
-  return (
-    <P2PProvider>
-      <LayoutInner>{children}</LayoutInner>
-    </P2PProvider>
-  );
+  return <LayoutInner>{children}</LayoutInner>;
 }
 
 function LayoutInner({ children }: { children: ReactNode }) {

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Wallet, Download, Upload, Pencil, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
 import { WalletConnect } from "@/components/WalletConnect";
+import { POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -30,7 +31,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("posts").select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
+    supabase.from("posts").select(POST_WITH_AUTHOR_AND_SERVER_SELECT)
       .eq("user_id", user.id).order("created_at", { ascending: false })
       .then(({ data }) => setPosts((data as any) ?? []));
   }, [user]);

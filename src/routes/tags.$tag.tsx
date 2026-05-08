@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
 import { Hash } from "lucide-react";
 
 export const Route = createFileRoute("/tags/$tag")({
@@ -25,7 +26,7 @@ function TagFeed() {
       setLoading(true);
       const { data, error } = await supabase
         .from("posts")
-        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)")
+        .select(POST_WITH_AUTHOR_AND_SERVER_SELECT)
         .ilike("caption", `%#${tag}%`)
         .order("created_at", { ascending: false })
         .limit(50);

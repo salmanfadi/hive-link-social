@@ -6,6 +6,7 @@ import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { POST_WITH_AUTHOR_AND_SERVER_LITE_SELECT } from "@/lib/query-selects";
 import { UserPlus, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,7 +32,7 @@ function UserPage() {
       if (!p) { setLoading(false); return; }
       setProfile(p);
       const [{ data: posts }, { count: followers }, { count: followingCount }, mineRes] = await Promise.all([
-        supabase.from("posts").select("*, profiles!inner(username, display_name, avatar_url), servers(name, slug)")
+        supabase.from("posts").select(POST_WITH_AUTHOR_AND_SERVER_LITE_SELECT)
           .eq("user_id", p.id).order("created_at", { ascending: false }),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", p.id),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", p.id),

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useP2PSync, type P2PEvent } from "@/lib/use-p2p-sync";
 
@@ -61,34 +61,38 @@ export function P2PProvider({ children }: { children: ReactNode }) {
     }
   );
 
-  return (
-    <P2PCtx.Provider
-      value={{
-        peerCount,
-        connectedPeers,
-        broadcastNewPost: (post) => broadcast({ type: "new-post", post }),
-        onInboundPost: (handler) => {
-          handlers.add(handler);
-          return () => { handlers.delete(handler); };
-        },
-        dms,
-        sendDM: (toPeerId, text) => {
-          if (!user) return false;
-          const msg = { type: "dm", to: toPeerId, from: user.id, text, id: Math.random().toString(), timestamp: Date.now() };
-          if (sendDirect(toPeerId, msg as any)) {
-            setDms(prev => ({
-              ...prev,
-              [toPeerId]: [...(prev[toPeerId] || []), { from: user.id, text, timestamp: msg.timestamp }]
-            }));
-            return true;
-          }
-          return false;
-        },
-      }}
-    >
-      {children}
-    </P2PCtx.Provider>
-  );
+  const broadcastNewPost = useCallback((post: Record<string, unknown>) => {
+    broadcast({ type: "new-post", post });
+  }, [broadcast]);
+
+  const onInboundPost = useCallback((handler: (post: Record<string, unknown>, fromPeer: string) => void) => {
+    handlers.add(handler);
+    return () => { handlers.delete(handler); };
+  }, [handlers]);
+
+  const sendDM = useCallback((toPeerId: string, text: string) => {
+    if (!user) return false;
+    const msg = { type: "dm", to: toPeerId, from: user.id, text, id: Math.random().toString(), timestamp: Date.now() };
+    if (sendDirect(toPeerId, msg as any)) {
+      setDms(prev => ({
+        ...prev,
+        [toPeerId]: [...(prev[toPeerId] || []), { from: user.id, text, timestamp: msg.timestamp }]
+      }));
+      return true;
+    }
+    return false;
+  }, [sendDirect, user]);
+
+  const value = useMemo<Ctx>(() => ({
+    peerCount,
+    connectedPeers,
+    broadcastNewPost,
+    onInboundPost,
+    dms,
+    sendDM,
+  }), [peerCount, connectedPeers, broadcastNewPost, onInboundPost, dms, sendDM]);
+
+  return <P2PCtx.Provider value={value}>{children}</P2PCtx.Provider>;
 }
 
 /**

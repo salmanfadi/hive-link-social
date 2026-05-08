@@ -7,6 +7,7 @@ import { Layout } from "@/components/Layout";
 import { PostCard, type PostWithMeta } from "@/components/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cacheFeed, getCachedFeed } from "@/lib/cache";
+import { POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -46,7 +47,7 @@ function Home() {
       setLoading(true);
       let query = supabase
         .from("posts")
-        .select("*, profiles!inner(username, display_name, avatar_url, public_key), servers(name, slug)");
+        .select(POST_WITH_AUTHOR_AND_SERVER_SELECT);
 
       if (feedType === "following") {
         const { data: follows } = await supabase
