@@ -127,20 +127,20 @@ function ResetPasswordPage() {
                 variant="outline"
                 className="w-full h-11 border-destructive/20 hover:bg-destructive/5 hover:text-destructive"
               >
-                <Link to="/login">Request new link</Link>
+                <a href="/login.html">Request new link</a>
               </Button>
             </div>
           )}
         </CardContent>
 
         <CardFooter className="flex flex-col border-t border-border/50 pt-6 pb-8">
-          <Link
-            to="/login"
+          <a
+            href="/login.html"
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary font-medium transition-all group"
           >
             <Home className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             Back to login
-          </Link>
+          </a>
         </CardFooter>
       </Card>
 

@@ -39,7 +39,10 @@ function ServersPage() {
 
   useEffect(() => { load(); }, [user]);
 
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
 
   const create = async () => {
     if (!name.trim() || !slug.trim()) { toast.error("Name and slug required"); return; }

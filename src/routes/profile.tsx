@@ -40,7 +40,10 @@ function ProfilePage() {
   }, [profile]);
 
   if (authLoading) return null;
-  if (!user || !profile) return <Navigate to="/auth" />;
+  if (!user || !profile) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
 
   const saveEdit = async () => {
     let avatar_url = profile.avatar_url;

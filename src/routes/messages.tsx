@@ -32,7 +32,10 @@ function MessagesPage() {
     }
   }, [connectedPeers]);
 
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
 
   const currentDms = selectedPeer ? dms[selectedPeer] || [] : [];
 

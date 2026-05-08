@@ -42,7 +42,10 @@ function SearchPage() {
   const empty = useMemo(() => debounced && people.length === 0 && communities.length === 0, [debounced, people, communities]);
 
   if (authLoading) return null;
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
 
   return (
     <Layout>

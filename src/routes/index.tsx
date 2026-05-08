@@ -11,12 +11,6 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw redirect({ to: "/auth" });
-    }
-  },
   component: Home,
   head: () => ({
     meta: [
@@ -33,8 +27,21 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [feedType, setFeedType] = useState<"global" | "following">("global");
 
+  // Check if user is authenticated
+  // authLoading is false when auth is settled (either logged in or not)
+  useEffect(() => {
+    console.log("[Home] Auth status:", { user: user?.email, loading: authLoading });
+
+    if (!authLoading && !user) {
+      // Auth is settled and no user - not logged in
+      console.log("[Home] Not authenticated, redirecting to login");
+      window.location.replace("/login.html");
+    }
+  }, [user, authLoading]);
+
   useEffect(() => {
     if (!user) return;
+
     (async () => {
       setLoading(true);
       let query = supabase
@@ -79,11 +86,25 @@ function Home() {
     });
   }, [onInboundPost]);
 
-  // While auth is resolving (only happens when a stored session exists), show nothing
-  if (authLoading) return null;
+  // Show nothing while auth is being checked
+  if (authLoading) {
+    console.log("[Home] Auth still loading...");
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your session...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Not logged in → go to login immediately
-  if (!user) return <Navigate to="/auth" />;
+  // Not authenticated - show nothing (will redirect above)
+  if (!user) {
+    return null;
+  }
+
+  console.log("[Home] Authenticated as:", user.email);
 
   return (
     <Layout>

@@ -48,11 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  // Only start loading=true if there's a stored session to validate.
-  // This ensures unauthenticated users see the login page immediately.
-  // Always start loading=false to match SSR (server has no localStorage).
-  // The useEffect restores session asynchronously without blocking initial render.
-  const [loading, setLoading] = useState(false);
+  // Start loading=true when there is an existing Supabase session token in localStorage.
+  // This prevents the app from treating auth as already resolved and redirecting away
+  // before the session can be restored on page load.
+  const [loading, setLoading] = useState(() => hasStoredSession());
   const [keys, setKeys] = useState<{ publicKey: CryptoKey; privateKey: CryptoKey } | null>(null);
 
   const loadKeys = async (u: User, p: Profile) => {

@@ -63,7 +63,10 @@ function NotificationsPage() {
   };
 
   if (authLoading) return null;
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
 
   const icon = (t: Notif["type"]) =>
     t === "like" ? <Heart className="h-4 w-4 text-rose-500" /> :

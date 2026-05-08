@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verifying email - Decentra</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --background: #f7f8fb;
+        --foreground: #191b23;
+        --muted: #4a5468;
+        --border: #dfe3ec;
+        --danger: #b42318;
+        --success: #067647;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--background);
+        color: var(--foreground);
+        padding: 20px;
+      }
+      .card {
+        width: 100%;
+        max-width: 520px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 32px 24px;
+        box-shadow: 0 24px 70px rgb(20 24 40 / 12%);
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .status {
+        margin: 0;
+        line-height: 1.6;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .status.success {
+        color: var(--success);
+      }
+      .status.error {
+        color: var(--danger);
+        background: rgb(180 35 24 / 8%);
+        border: 1px solid rgb(180 35 24 / 28%);
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 16px;
+      }
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--border);
+        border-top-color: var(--foreground);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .hidden {
+        display: none;
+      }
+      .footer {
+        margin-top: 20px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      a {
+        color: #6048d6;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1 id="title">Verifying email</h1>
+      <p id="status" class="status">
+        <span class="spinner"></span>
+        <span id="status-text">Completing verification...</span>
+      </p>
+      <div id="debug-info" class="hidden" style="margin-top: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px; font-size: 12px; font-family: monospace; color: #666; max-height: 200px; overflow-y: auto;">
+        <strong>Debug Info (for troubleshooting):</strong>
+        <pre id="debug-log" style="margin: 8px 0 0; white-space: pre-wrap; word-break: break-word;"></pre>
+      </div>
+      <div id="action-buttons" class="hidden" style="margin-top: 20px; display: flex; gap: 12px; flex-direction: column;">
+        <a href="/login.html" style="display: block; padding: 12px 16px; background: #6048d6; color: white; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600;">Go to Login</a>
+        <a href="/signup.html" style="display: block; padding: 12px 16px; background: transparent; color: #6048d6; border: 1px solid #6048d6; border-radius: 8px; text-align: center; text-decoration: none; font-weight: 600;">Try Again</a>
+      </div>
+      <p class="footer">
+        Having issues? Check your browser console (F12) for detailed error information.
+      </p>
+    </div>
+
+    <script src="/runtime-env.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const statusEl = document.getElementById("status");
+      const statusTextEl = document.getElementById("status-text");
+      const debugLog = document.getElementById("debug-log");
+      const debugInfo = document.getElementById("debug-info");
+      const actionButtons = document.getElementById("action-buttons");
+      const titleEl = document.getElementById("title");
+
+      const SUPABASE_URL = window.__DECENTRA_ENV__?.SUPABASE_URL;
+      const SUPABASE_KEY = window.__DECENTRA_ENV__?.SUPABASE_PUBLISHABLE_KEY;
+
+      let logs = [];
+
+      function log(msg, level = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const fullMsg = `[${timestamp}] [${level.toUpperCase()}] ${msg}`;
+        logs.push(fullMsg);
+        console.log(fullMsg);
+        updateDebugLog();
+      }
+
+      function updateDebugLog() {
+        debugLog.textContent = logs.join("\n");
+        if (logs.length > 0) {
+          debugInfo.classList.remove("hidden");
+        }
+      }
+
+      function setStatus(text, type = "loading") {
+        statusTextEl.textContent = text;
+        statusEl.className = `status ${type}`;
+        if (type !== "loading") {
+          statusEl.querySelector(".spinner")?.remove();
+        }
+        log(text, type);
+      }
+
+      async function run() {
+        try {
+          log("Starting email verification process");
+          log(`Supabase URL: ${SUPABASE_URL ? "✓ configured" : "✗ missing"}`);
+          log(`Supabase Key: ${SUPABASE_KEY ? "✓ configured" : "✗ missing"}`);
+
+          if (!SUPABASE_URL || !SUPABASE_KEY) {
+            setStatus("Missing Supabase configuration. Check runtime-env.js", "error");
+            return;
+          }
+
+          const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true,
+            },
+          });
+
+          log("Supabase client created");
+
+          const url = new URL(window.location.href);
+          const searchParams = url.searchParams;
+          const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
+
+          log(`URL: ${url.href}`);
+          log(`Search params: ${url.search}`);
+          log(`Hash: ${url.hash}`);
+
+          const code = searchParams.get("code");
+          const tokenHash = searchParams.get("token_hash") || hashParams.get("token_hash");
+          const type = searchParams.get("type") || hashParams.get("type") || "signup";
+
+          log(`code: ${code ? "✓ present" : "✗ missing"}`);
+          log(`tokenHash: ${tokenHash ? "✓ present" : "✗ missing"}`);
+          log(`type: ${type}`);
+
+          if (code) {
+            log("Attempting to exchange code for session...");
+            const { data, error } = await sbClient.auth.exchangeCodeForSession(code);
+            if (error) {
+              throw new Error(`Code exchange failed: ${error.message}`);
+            }
+            log("✓ Code exchange successful");
+            log(`Session created: ${data?.session ? "✓ yes" : "✗ no"}`);
+          } else if (tokenHash) {
+            log(`Attempting to verify OTP with type="${type}"...`);
+            const { data, error } = await sbClient.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type === "signup" ? "signup" : "email_change",
+            });
+            if (error) {
+              throw new Error(`OTP verification failed: ${error.message}`);
+            }
+            log("✓ OTP verification successful");
+            log(`Session created: ${data?.session ? "✓ yes" : "✗ no"}`);
+          } else {
+            throw new Error("No verification code or token found in URL");
+          }
+
+          // Wait a moment for session to persist
+          await new Promise(r => setTimeout(r, 500));
+
+          log("Checking if session exists...");
+          const { data, error: sessionError } = await sbClient.auth.getSession();
+          if (sessionError) {
+            throw new Error(`Session check failed: ${sessionError.message}`);
+          }
+
+          log(`Session exists: ${data?.session ? "✓ yes" : "✗ no"}`);
+          if (data?.session) {
+            log(`User: ${data.session.user.email}`);
+            log("Email verified and logged in successfully!");
+            setStatus("✓ Email verified successfully! Redirecting to home...", "success");
+            titleEl.textContent = "Email verified!";
+            
+            // Redirect after a short delay so user sees success message
+            setTimeout(() => {
+              window.location.replace("/");
+            }, 1000);
+          } else {
+            log("Warning: Email verified but no session created. Redirecting to login.");
+            setStatus("✓ Email verified! Please login now.", "success");
+            titleEl.textContent = "Email verified!";
+            actionButtons.classList.remove("hidden");
+            
+            setTimeout(() => {
+              window.location.replace("/login.html?verified=1&email=" + encodeURIComponent(searchParams.get("email") || ""));
+            }, 2000);
+          }
+        } catch (error) {
+          const errorMsg = error?.message || "Unknown error";
+          log(`✗ ERROR: ${errorMsg}`, "error");
+          setStatus(errorMsg, "error");
+          titleEl.textContent = "Verification failed";
+          actionButtons.classList.remove("hidden");
+        }
+      }
+
+      // Start verification process
+      run();
+    </script>
+  </body>
+</html>

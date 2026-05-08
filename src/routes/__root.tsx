@@ -36,19 +36,10 @@ function NotFoundComponent() {
 // client.tsx imports styles.css which Vite injects as <style> tags on the client.
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="manifest" href="/manifest.webmanifest" />
-        <HeadContent />
-      </head>
-      <body>
-        <div id="root">{children}</div>
-        <Scripts />
-      </body>
-    </html>
+    <>
+      <HeadContent />
+      {children}
+    </>
   );
 }
 
@@ -65,7 +56,7 @@ export const Route = createRootRoute({
  */
 function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isPublicAuthPage = pathname === "/auth" || pathname === "/login" || pathname === "/signup";
+  const isPublicAuthPage = pathname === "/signup";
 
   if (isPublicAuthPage) {
     return (

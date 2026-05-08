@@ -53,7 +53,10 @@ function ServerPage() {
 
   useEffect(() => { load(); }, [slug, user]);
 
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login.html");
+    return null;
+  }
   if (loading) return <Layout><div className="p-8 text-muted-foreground">Loading…</div></Layout>;
   if (!server) throw notFound();
 
