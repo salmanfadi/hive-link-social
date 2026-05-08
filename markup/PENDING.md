@@ -75,23 +75,23 @@ These are the bugs found in the current codebase that must be fixed before addin
   - `profiles!comments_user_id_fkey(...)`
   - `profiles!server_members_user_id_fkey(...)`
 - [x] Add a tiny shared query helper/constants for post/profile selects so FK names are not duplicated across routes.
-- [ ] Add integration test for "create post + load feed + quoted post + comments" to catch relationship regressions.
+- [x] Add integration test for "create post + load feed + quoted post + comments" to catch relationship regressions.
 
 ### Wallet / MetaMask
 - [x] Wallet connect now resolves MetaMask from `window.ethereum.providers` and waits for delayed injection (`ethereum#initialized`).
-- [ ] Add support for EIP-6963 provider discovery events for multi-wallet browsers.
-- [ ] Add chain/network validation in wallet connect flow (e.g., require specific chain IDs and show switch UI).
+- [x] Add support for EIP-6963 provider discovery events for multi-wallet browsers.
+- [x] Add chain/network validation in wallet connect flow (e.g., require specific chain IDs and show switch UI).
 
 ### P2P reliability
-- [ ] Add channel lifecycle metrics (active channels, peer count, reconnect attempts) to detect subscription storms early.
-- [ ] Persist a lightweight peer session log (last 100 events) for freeze debugging.
-- [ ] Backoff reconnect strategy for failed ICE connections to avoid repeated storms on unstable networks.
+- [x] Add channel lifecycle metrics (active channels, peer count, reconnect attempts) to detect subscription storms early.
+- [x] Persist a lightweight peer session log (last 100 events) for freeze debugging.
+- [x] Backoff reconnect strategy for failed ICE connections to avoid repeated storms on unstable networks.
 - [ ] Move TURN credentials to env-backed self-hosted TURN before production.
 
 ### Upload pipeline (Supabase + IPFS)
-- [ ] Track and store upload statuses per post (`supabase_uploaded`, `ipfs_pinned`, `ipfs_failed_reason`).
-- [ ] Add retry queue for failed Pinata pin operations instead of generating synthetic fallback hashes.
-- [ ] Surface partial-success UI: "Posted to Supabase; IPFS pin pending/retrying".
+- [x] Track and store upload statuses per post (`supabase_uploaded`, `ipfs_pinned`, `ipfs_failed_reason`).
+- [x] Add retry queue for failed Pinata pin operations instead of generating synthetic fallback hashes.
+- [x] Surface partial-success UI: "Posted to Supabase; IPFS pin pending/retrying".
 
 ---
 
@@ -105,13 +105,13 @@ These are the bugs found in the current codebase that must be fixed before addin
 - [ ] **Token-gated communities** — require holding a token to join
 - [ ] **End-to-end encrypted media** uploaded through IPFS
 - [ ] **Multi-language / i18n**
-- [ ] **Accessibility audit** (keyboard nav, focus traps in dialogs, ARIA labels)
+- [x] **Accessibility audit** (keyboard nav, focus traps in dialogs, ARIA labels)
 - [ ] **Analytics + admin dashboard**
 
 ### Infra / DX
 - [ ] Migrate `media` storage bucket to private + signed URLs (linter warning in Supabase advisors)
 - [ ] E2E test suite (Playwright) for auth + post + follow flows
-- [ ] Rate limiting on posts / comments / follows (Supabase Edge Function or DB trigger)
+- [x] Rate limiting on posts / comments / follows (Supabase Edge Function or DB trigger)
 - [ ] Move IPFS pinning off Pinata onto a self-hosted IPFS node
 - [ ] Self-hosted TURN servers (current public TURN is best-effort, not for production)
 - [ ] P2P `use-p2p-sync.ts` — replace public openrelay TURN credentials with self-hosted TURN

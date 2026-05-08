@@ -12,6 +12,12 @@ type Ctx = {
   onInboundPost: (handler: (post: Record<string, unknown>, fromPeer: string) => void) => () => void;
   dms: Record<string, DM[]>;
   sendDM: (toPeerId: string, text: string) => boolean;
+  // Lifecycle metrics (Item 4)
+  activeChannels: number;
+  reconnectAttempts: number;
+  lastEvent: string | null;
+  // Session log ring-buffer
+  sessionLog: string[];
 };
 
 /**
@@ -25,6 +31,10 @@ const nullCtx: Ctx = {
   onInboundPost: () => () => {},
   dms: {},
   sendDM: () => false,
+  activeChannels: 0,
+  reconnectAttempts: 0,
+  lastEvent: null,
+  sessionLog: [],
 };
 
 const P2PCtx = createContext<Ctx | null>(null);
@@ -48,7 +58,7 @@ export function P2PProvider({ children }: { children: ReactNode }) {
   // Only activate the sync hook when both user is present AND the delay has elapsed
   const activeUserId = p2pReady && user ? user.id : null;
 
-  const { peerCount, broadcast, sendDirect, connectedPeers } = useP2PSync(
+  const { peerCount, broadcast, sendDirect, connectedPeers, activeChannels, reconnectAttempts, lastEvent, sessionLog } = useP2PSync(
     activeUserId,
     (e: P2PEvent, fromPeer) => {
       if (e.type === "new-post") handlers.forEach((h) => h(e.post, fromPeer));
@@ -90,7 +100,11 @@ export function P2PProvider({ children }: { children: ReactNode }) {
     onInboundPost,
     dms,
     sendDM,
-  }), [peerCount, connectedPeers, broadcastNewPost, onInboundPost, dms, sendDM]);
+    activeChannels,
+    reconnectAttempts,
+    lastEvent,
+    sessionLog,
+  }), [peerCount, connectedPeers, broadcastNewPost, onInboundPost, dms, sendDM, activeChannels, reconnectAttempts, lastEvent, sessionLog]);
 
   return <P2PCtx.Provider value={value}>{children}</P2PCtx.Provider>;
 }

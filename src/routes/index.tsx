@@ -109,26 +109,34 @@ function Home() {
 
   return (
     <Layout>
-      <header className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10 px-5 pt-4">
-        <div className="flex items-center justify-between mb-2">
+      <header className="sticky top-0 bg-background/90 backdrop-blur border-b border-border z-10 px-4 pt-3">
+        <div className="flex items-center gap-3 mb-2">
+          {/* Logo shown on mobile only (sidebar is hidden) */}
+          <span className="md:hidden flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="h-7 w-7">
+              <rect width="32" height="32" rx="6" fill="hsl(var(--primary))" />
+              <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white" fillOpacity="0.95" />
+              <circle cx="16" cy="16" r="3" fill="hsl(var(--primary))" />
+            </svg>
+          </span>
           <div>
-            <h1 className="text-xl font-bold">Home Feed</h1>
-            <p className="text-xs text-muted-foreground">
-              Federated content · IPFS-pinned media · live P2P relay
+            <h1 className="text-lg font-bold leading-tight">Home Feed</h1>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Federated · IPFS · P2P relay
             </p>
           </div>
         </div>
         <Tabs value={feedType} onValueChange={(v) => setFeedType(v as any)} className="w-full">
-          <TabsList className="w-full justify-start h-auto p-0 bg-transparent gap-6">
+          <TabsList className="w-full justify-start h-auto p-0 bg-transparent gap-5">
             <TabsTrigger
               value="global"
-              className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
+              className="px-0 py-2 text-sm border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground rounded-none shadow-none font-semibold transition-colors text-muted-foreground"
             >
               Global
             </TabsTrigger>
             <TabsTrigger
               value="following"
-              className="px-0 py-2 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none shadow-none font-semibold transition-none"
+              className="px-0 py-2 text-sm border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground rounded-none shadow-none font-semibold transition-colors text-muted-foreground"
             >
               Following
             </TabsTrigger>

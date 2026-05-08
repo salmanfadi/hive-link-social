@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert, Repeat2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Trash2, ShieldCheck, ShieldAlert, Repeat2, RefreshCw } from "lucide-react";
 import { importPublicKey, verifyData } from "@/services/crypto";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { COMMENT_WITH_AUTHOR_SELECT, POST_WITH_AUTHOR_AND_SERVER_SELECT } from "@/lib/query-selects";
+import { retryPinToIPFS } from "@/server/pinata.functions";
 import { toast } from "sonner";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -19,6 +20,10 @@ export type PostWithMeta = {
   media_url: string | null;
   media_type: string | null;
   ipfs_hash: string | null;
+  /** Set after successful Pinata pin. False = pending/failed (check ipfs_failed_reason). */
+  ipfs_pinned?: boolean | null;
+  /** Non-null means the last IPFS pin attempt failed with this reason. */
+  ipfs_failed_reason?: string | null;
   created_at: string;
   signature: string | null;
   quoted_post_id?: string | null;
@@ -42,6 +47,21 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   const navigate = useNavigate();
   const author = post.profiles;
   const isOwner = user?.id === post.user_id;
+  const [retrying, setRetrying] = useState(false);
+
+  const retryIpfs = async () => {
+    if (!post.media_url) return;
+    setRetrying(true);
+    try {
+      const result = await retryPinToIPFS({ data: { postId: post.id, mediaUrl: post.media_url } });
+      toast.success(`Re-pinned to IPFS: ${result.ipfsHash.slice(0, 12)}…`);
+      onDelete?.(); // trigger parent to refresh the feed
+    } catch (e: any) {
+      toast.error(`IPFS retry failed: ${e?.message ?? "unknown error"}`);
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   useEffect(() => {
     if (!post.quoted_post_id) { setQuoted(null); return; }
@@ -161,11 +181,14 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
   };
 
   return (
-    <article className="border-b border-border p-4 hover:bg-secondary/30 transition-colors">
+    <article
+      className="border-b border-border px-4 py-3 hover:bg-secondary/20 transition-colors cursor-default"
+      aria-label={`Post by ${author?.display_name ?? author?.username ?? "unknown"}`}
+    >
       <div className="flex gap-3">
-        <Link to="/u/$username" params={{ username: author?.username ?? "" }}>
+        <Link to="/u/$username" params={{ username: author?.username ?? "" }} aria-label={`View ${author?.username ?? "user"}'s profile`}>
           <Avatar className="h-11 w-11">
-            <AvatarImage src={author?.avatar_url ?? undefined} />
+            <AvatarImage src={author?.avatar_url ?? undefined} alt={`${author?.username ?? "user"}'s avatar`} />
             <AvatarFallback>{author?.username?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
           </Avatar>
         </Link>
@@ -179,10 +202,10 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             <span className="text-muted-foreground text-xs">
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </span>
-            {verified !== null && (
-              <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border ${verified ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
-                {verified ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                {verified ? "Verified" : "Unverified"}
+            {verified === true && (
+              <div className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border bg-green-500/10 text-green-500 border-green-500/20">
+                <ShieldCheck className="h-3 w-3" />
+                Verified
               </div>
             )}
             {post.servers && (
@@ -194,8 +217,12 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               </>
             )}
             {isOwner && (
-              <Button variant="ghost" size="icon" className="ml-auto h-8 w-8" onClick={deletePost}>
-                <Trash2 className="h-4 w-4" />
+              <Button
+                variant="ghost" size="icon" className="ml-auto h-8 w-8"
+                onClick={deletePost}
+                aria-label="Delete post"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>
@@ -204,9 +231,9 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
           {post.media_url && !imgFailed && (
             <div className="mt-3 rounded-xl overflow-hidden border border-border">
               {post.media_type?.startsWith("video") ? (
-                <video src={post.media_url} controls className="w-full max-h-[500px]" />
+                <video src={post.media_url} controls className="w-full max-h-[500px]" aria-label="Post video" />
               ) : (
-                <img src={post.media_url} alt="" className="w-full max-h-[500px] object-cover" onError={() => setImgFailed(true)} />
+                <img src={post.media_url} alt={post.caption ? `Image: ${post.caption.slice(0, 80)}` : "Post image"} className="w-full max-h-[500px] object-cover" onError={() => setImgFailed(true)} />
               )}
             </div>
           )}
@@ -228,6 +255,24 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
               Media unavailable
             </div>
           )}
+          {/* IPFS pending/failed badge — shown to post owner only */}
+          {isOwner && post.media_url && post.ipfs_pinned === false && (
+            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs">
+              <RefreshCw className={`h-3 w-3 ${retrying ? "animate-spin" : ""}`} />
+              <span className="flex-1">
+                {post.ipfs_failed_reason
+                  ? "IPFS pin failed — not yet decentralized"
+                  : "IPFS pin pending…"}
+              </span>
+              <button
+                onClick={retryIpfs}
+                disabled={retrying}
+                className="font-semibold hover:underline disabled:opacity-50"
+              >
+                {retrying ? "Retrying…" : "Retry"}
+              </button>
+            </div>
+          )}
           {quoted && (
             <Link
               to="/u/$username"
@@ -245,29 +290,50 @@ export function PostCard({ post, onDelete }: { post: PostWithMeta; onDelete?: ()
             </Link>
           )}
 
-          <div className="flex items-center gap-2 mt-3 text-muted-foreground">
-            <Button variant="ghost" size="sm" onClick={toggleLike} className={liked ? "text-rose-500 hover:text-rose-600" : ""}>
-              <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
-              <span className="ml-1.5 text-xs">{likeCount}</span>
+          <div className="flex items-center gap-2 mt-3 text-muted-foreground" role="toolbar" aria-label="Post actions">
+            <Button
+              variant="ghost" size="sm"
+              onClick={toggleLike}
+              aria-label={liked ? `Unlike (${likeCount} likes)` : `Like (${likeCount} likes)`}
+              aria-pressed={liked}
+              className={liked ? "text-rose-500 hover:text-rose-600" : ""}
+            >
+              <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} aria-hidden="true" />
+              <span className="ml-1.5 text-xs" aria-hidden="true">{likeCount}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={toggleComments}>
-              <MessageCircle className="h-4 w-4" />
-              <span className="ml-1.5 text-xs">{comments.length || ""}</span>
+            <Button
+              variant="ghost" size="sm"
+              onClick={toggleComments}
+              aria-label={showComments ? "Hide comments" : `Show comments (${comments.length})`}
+              aria-expanded={showComments}
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              <span className="ml-1.5 text-xs" aria-hidden="true">{comments.length || ""}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={toggleRepost} className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}>
-              <Repeat2 className="h-4 w-4" />
-              <span className="ml-1.5 text-xs">{repostCount || ""}</span>
+            <Button
+              variant="ghost" size="sm"
+              onClick={toggleRepost}
+              aria-label={reposted ? `Undo repost (${repostCount} reposts)` : `Repost (${repostCount} reposts)`}
+              aria-pressed={reposted}
+              className={reposted ? "text-emerald-500 hover:text-emerald-600" : ""}
+            >
+              <Repeat2 className="h-4 w-4" aria-hidden="true" />
+              <span className="ml-1.5 text-xs" aria-hidden="true">{repostCount || ""}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/new", search: { quote: post.id } as any })} title="Quote post">
-              <MessageCircle className="h-4 w-4 rotate-180" />
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => navigate({ to: "/new", search: { quote: post.id } as any })}
+              aria-label="Quote this post"
+            >
+              <MessageCircle className="h-4 w-4 rotate-180" aria-hidden="true" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={sharePost}>
-              <Share2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={sharePost} aria-label="Copy link to this post">
+              <Share2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
           {showComments && (
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 space-y-3" aria-live="polite" aria-label="Comments">
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-2 text-sm">
                   <Avatar className="h-7 w-7">

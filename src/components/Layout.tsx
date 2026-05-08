@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, User, Users, LogOut, PlusSquare, Sparkles, Radio, Bell, Search, MessageCircle } from "lucide-react";
+import { Home, User, Users, LogOut, PlusSquare, Radio, Bell, Search, MessageCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useP2P } from "@/lib/p2p-context";
@@ -15,10 +15,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
 function LayoutInner({ children }: { children: ReactNode }) {
   const { profile, signOut, user } = useAuth();
-  const { peerCount } = useP2P();
+  const { peerCount, activeChannels, reconnectAttempts, lastEvent, sessionLog } = useP2P();
   const navigate = useNavigate();
   const { location } = useRouterState();
   const [unread, setUnread] = useState(0);
+  const [showP2PDetails, setShowP2PDetails] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -62,8 +63,15 @@ function LayoutInner({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-6xl flex">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-20 lg:w-64 h-screen sticky top-0 p-4 border-r border-border">
-          <Link to="/" className="flex items-center gap-2 px-2 py-4 mb-4">
-            <Sparkles className="h-7 w-7 text-primary" />
+          <Link to="/" className="flex items-center gap-2 px-2 py-4 mb-4" aria-label="Decentra home">
+            {/* Favicon logo — matches /favicon.svg */}
+            <span className="flex-shrink-0 h-8 w-8">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="h-8 w-8">
+                <rect width="32" height="32" rx="6" fill="currentColor" className="text-primary" />
+                <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white" fillOpacity="0.95" />
+                <circle cx="16" cy="16" r="3" fill="currentColor" className="text-primary" />
+              </svg>
+            </span>
             <span className="text-xl font-bold hidden lg:inline bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
               Decentra
             </span>
@@ -76,11 +84,52 @@ function LayoutInner({ children }: { children: ReactNode }) {
             {navItem("/messages", <MessageCircle className="h-5 w-5" />, "Messages")}
             {navItem("/profile", <User className="h-5 w-5" />, "Profile")}
           </nav>
-          <div className="mb-3 px-2 hidden lg:flex items-center gap-2 text-xs text-muted-foreground">
-            <Radio className={`h-3.5 w-3.5 ${peerCount > 0 ? "text-primary animate-pulse" : ""}`} />
-            <span>P2P</span>
-            <Badge variant="secondary" className="ml-auto">{peerCount} {peerCount === 1 ? "peer" : "peers"}</Badge>
-            <ThemeToggle />
+          <div className="mb-3 px-2 hidden lg:block">
+            <button
+              className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowP2PDetails((v) => !v)}
+              title="Click to toggle P2P details"
+            >
+              <Radio className={`h-3.5 w-3.5 ${peerCount > 0 ? "text-primary animate-pulse" : ""}`} />
+              <span>P2P</span>
+              <Badge variant="secondary" className="ml-auto">{peerCount} {peerCount === 1 ? "peer" : "peers"}</Badge>
+              <ThemeToggle />
+            </button>
+            {showP2PDetails && (
+              <div className="mt-2 p-2 rounded-lg bg-secondary/60 text-[11px] text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Open channels</span>
+                  <span className="font-mono">{activeChannels}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Reconnects</span>
+                  <span className="font-mono">{reconnectAttempts}</span>
+                </div>
+                {sessionLog.length > 0 && (
+                  <>
+                    <div className="pt-1 border-t border-border">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-medium text-foreground">Session log</span>
+                        <button
+                          className="text-[10px] text-primary hover:underline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(sessionLog.join("\n"));
+                          }}
+                          title="Copy full log to clipboard"
+                        >
+                          Copy ({sessionLog.length})
+                        </button>
+                      </div>
+                      <div className="space-y-0.5 max-h-28 overflow-y-auto">
+                        {sessionLog.slice(-10).map((entry, i) => (
+                          <div key={i} className="text-[10px] truncate" title={entry}>{entry}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <Button
             className="w-full mb-4 rounded-xl shadow-md"

@@ -33,6 +33,8 @@ function NewPost() {
   const [servers, setServers] = useState<Array<{ id: string; name: string }>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [quotedPreview, setQuotedPreview] = useState<{ caption: string | null; username: string } | null>(null);
+  /** Tracks upload pipeline status for partial-success UI */
+  const [ipfsStatus, setIpfsStatus] = useState<"idle" | "uploading" | "pinning" | "pinned" | "pin-failed">("idle");
 
   useEffect(() => {
     if (!quote) return;
@@ -65,29 +67,23 @@ function NewPost() {
   const submit = async () => {
     if (!caption.trim() && !file) { toast.error("Add a caption or media"); return; }
     setSubmitting(true);
+    setIpfsStatus("idle");
     let media_url: string | null = null;
     let media_type: string | null = null;
-    let ipfs_hash: string | null = null;
+
+    // ── Step 1: Upload media to Supabase Storage ───────────────────────────
     if (file) {
+      setIpfsStatus("uploading");
       const ext = file.name.split(".").pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("media").upload(path, file);
-      if (upErr) { toast.error(upErr.message); setSubmitting(false); return; }
+      if (upErr) { toast.error(upErr.message); setSubmitting(false); setIpfsStatus("idle"); return; }
       const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
       media_url = pub.publicUrl;
       media_type = file.type;
-      // Also pin to IPFS via Pinata for true content addressing
-      try {
-        const fd = new FormData();
-        fd.append("file", file, file.name);
-        const result = await pinFileToIPFS({ data: fd });
-        ipfs_hash = result.ipfsHash;
-        toast.success(`Pinned to IPFS: ${result.ipfsHash.slice(0, 12)}…`);
-      } catch (e: any) {
-        console.warn("IPFS pin failed, using mock hash:", e);
-        ipfs_hash = "Qm" + btoa(path).replace(/[^a-zA-Z0-9]/g, "").slice(0, 44);
-      }
     }
+
+    // ── Step 2: Sign + insert post (always succeeds independently of IPFS) ─
     const createdAt = new Date().toISOString();
     const payload = `${caption.trim() || ""}:${media_url || ""}:${createdAt}`;
     const signature = await sign(payload);
@@ -97,16 +93,58 @@ function NewPost() {
       caption: caption.trim() || null,
       media_url,
       media_type,
-      ipfs_hash,
+      ipfs_hash: null,
       server_id: serverId === "none" ? null : serverId,
       created_at: createdAt,
       signature,
       quoted_post_id: quote ?? null,
+      // New columns from migration 20260509000000 — cast to any until types are regenerated
+      ...({
+        ipfs_pinned: false,
+        ipfs_failed_reason: null,
+      } as any),
     }).select(POST_WITH_AUTHOR_AND_SERVER_SELECT).single();
+
     setSubmitting(false);
-    if (error) toast.error(error.message);
-    else {
-      if (inserted) broadcastNewPost(inserted as Record<string, unknown>);
+    if (error) { toast.error(error.message); setIpfsStatus("idle"); return; }
+
+    if (inserted) broadcastNewPost(inserted as Record<string, unknown>);
+
+    // ── Step 3: IPFS pin (best-effort, non-blocking for navigation) ────────
+    if (file && media_url && inserted) {
+      setIpfsStatus("pinning");
+      toast.success("Posted! Pinning to IPFS in background…");
+
+      // Run async — don't block navigation
+      (async () => {
+        try {
+          const fd = new FormData();
+          fd.append("file", file, file.name);
+          const result = await pinFileToIPFS({ data: fd });
+          // Patch the post row with success
+          await supabase.from("posts").update({
+            ipfs_hash: result.ipfsHash,
+            ...({
+              ipfs_pinned: true,
+              ipfs_failed_reason: null,
+            } as any),
+          }).eq("id", (inserted as any).id);
+          setIpfsStatus("pinned");
+          toast.success(`Pinned to IPFS: ${result.ipfsHash.slice(0, 12)}…`);
+        } catch (e: any) {
+          const reason = e?.message ?? "Unknown IPFS error";
+          console.warn("IPFS pin failed:", reason);
+          // Patch the post row with the failure reason so it can be retried later
+          await supabase.from("posts").update({
+            ...({ ipfs_failed_reason: reason } as any),
+          }).eq("id", (inserted as any).id);
+          setIpfsStatus("pin-failed");
+          toast.warning(`Posted to Decentra ✓ — IPFS pin failed (retryable from feed)`);
+        }
+      })();
+
+      navigate({ to: "/" });
+    } else {
       toast.success("Posted!");
       navigate({ to: "/" });
     }

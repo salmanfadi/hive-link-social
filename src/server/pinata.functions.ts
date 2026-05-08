@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 
 function parseJwtExp(token: string): number | null {
   const parts = token.split(".");
@@ -54,3 +55,54 @@ export const pinFileToIPFS = createServerFn({ method: "POST" })
       size: json.PinSize,
     };
   });
+
+/**
+ * Retry IPFS pinning for a post that previously failed.
+ * Re-fetches the media from Supabase Storage URL and re-pins it to Pinata,
+ * then updates `ipfs_pinned = true` and clears `ipfs_failed_reason` on the post row.
+ */
+export const retryPinToIPFS = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => {
+    if (typeof data !== "object" || data === null) throw new Error("Expected object");
+    const { postId, mediaUrl } = data as Record<string, unknown>;
+    if (typeof postId !== "string") throw new Error("postId required");
+    if (typeof mediaUrl !== "string") throw new Error("mediaUrl required");
+    return { postId, mediaUrl };
+  })
+  .handler(async ({ data }) => {
+    const jwt = ensurePinataJwt(process.env.PINATA_JWT);
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) throw new Error("Supabase env not configured on server");
+
+    // Fetch the media blob from Supabase CDN
+    const mediaRes = await fetch(data.mediaUrl);
+    if (!mediaRes.ok) throw new Error(`Failed to fetch media (${mediaRes.status})`);
+    const blob = await mediaRes.blob();
+    const filename = data.mediaUrl.split("/").pop() ?? "file";
+
+    // Pin to IPFS
+    const fd = new FormData();
+    fd.append("file", blob, filename);
+    const pinRes = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}` },
+      body: fd,
+    });
+    if (!pinRes.ok) {
+      const text = await pinRes.text();
+      throw new Error(`Pinata retry failed (${pinRes.status}): ${text}`);
+    }
+    const pinJson = (await pinRes.json()) as { IpfsHash: string };
+
+    // Update the post row — server-side with service role to bypass RLS
+    const sb = createClient(supabaseUrl, supabaseKey);
+    const { error } = await sb
+      .from("posts")
+      .update({ ipfs_hash: pinJson.IpfsHash, ipfs_pinned: true, ipfs_failed_reason: null })
+      .eq("id", data.postId);
+    if (error) throw new Error(`DB update failed: ${error.message}`);
+
+    return { ipfsHash: pinJson.IpfsHash };
+  });
+

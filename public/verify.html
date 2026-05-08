@@ -173,22 +173,55 @@
 
           const url = new URL(window.location.href);
           const searchParams = url.searchParams;
+          // Hash fragment may contain implicit-flow tokens OR token_hash
           const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
 
           log(`URL: ${url.href}`);
           log(`Search params: ${url.search}`);
-          log(`Hash: ${url.hash}`);
+          log(`Hash: ${url.hash ? "(present, " + url.hash.length + " chars)" : "(empty)"}`);
 
+          // --- Pattern 1: Implicit OAuth flow (most common for email confirmation) ---
+          // Supabase sends: /verify.html#access_token=...&refresh_token=...&type=signup
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+
+          // --- Pattern 2: PKCE code exchange ---
           const code = searchParams.get("code");
+
+          // --- Pattern 3: OTP token_hash (magic link / older flow) ---
           const tokenHash = searchParams.get("token_hash") || hashParams.get("token_hash");
           const type = searchParams.get("type") || hashParams.get("type") || "signup";
 
-          log(`code: ${code ? "✓ present" : "✗ missing"}`);
-          log(`tokenHash: ${tokenHash ? "✓ present" : "✗ missing"}`);
+          log(`access_token (implicit): ${accessToken ? "✓ present" : "✗ missing"}`);
+          log(`code (PKCE): ${code ? "✓ present" : "✗ missing"}`);
+          log(`token_hash (OTP): ${tokenHash ? "✓ present" : "✗ missing"}`);
           log(`type: ${type}`);
 
-          if (code) {
-            log("Attempting to exchange code for session...");
+          if (accessToken && refreshToken) {
+            // Implicit flow — set session directly from hash tokens
+            log("Implicit flow detected — calling setSession()...");
+            const { data, error } = await sbClient.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (error) {
+              throw new Error(`setSession failed: ${error.message}`);
+            }
+            log("✓ setSession successful");
+            log(`Session user: ${data?.session?.user?.email ?? "(unknown)"}`);
+          } else if (accessToken) {
+            // access_token present but no refresh_token — try anyway
+            log("Partial implicit flow — access_token only, attempting setSession...");
+            const { data, error } = await sbClient.auth.setSession({
+              access_token: accessToken,
+              refresh_token: "",
+            });
+            if (error) {
+              throw new Error(`setSession (no refresh) failed: ${error.message}`);
+            }
+            log("✓ setSession (no refresh) successful");
+          } else if (code) {
+            log("PKCE flow detected — exchanging code for session...");
             const { data, error } = await sbClient.auth.exchangeCodeForSession(code);
             if (error) {
               throw new Error(`Code exchange failed: ${error.message}`);
@@ -196,7 +229,7 @@
             log("✓ Code exchange successful");
             log(`Session created: ${data?.session ? "✓ yes" : "✗ no"}`);
           } else if (tokenHash) {
-            log(`Attempting to verify OTP with type="${type}"...`);
+            log(`OTP flow detected — verifying token_hash with type="${type}"...`);
             const { data, error } = await sbClient.auth.verifyOtp({
               token_hash: tokenHash,
               type: type === "signup" ? "signup" : "email_change",
@@ -207,7 +240,13 @@
             log("✓ OTP verification successful");
             log(`Session created: ${data?.session ? "✓ yes" : "✗ no"}`);
           } else {
-            throw new Error("No verification code or token found in URL");
+            // No recognised token pattern — show helpful debug info
+            log("✗ No recognised token pattern found in URL");
+            log(`Full URL for debugging: ${window.location.href}`);
+            throw new Error(
+              "No verification token found in the URL. The link may have expired or already been used. " +
+              "Please request a new verification email from the signup page."
+            );
           }
 
           // Wait a moment for session to persist
